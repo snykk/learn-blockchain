@@ -36,7 +36,12 @@ func (pow *ProofOfWork) Run() (int, string) {
 	var hash [32]byte
 	nonce := 0
 
-	fmt.Printf("Mining block containing \"%s\"\n", pow.Block.Data)
+	txCount := len(pow.Block.Transactions)
+	if txCount > 0 {
+		fmt.Printf("Mining block containing %d transaction(s)\n", txCount)
+	} else {
+		fmt.Printf("Mining block (no transactions)\n")
+	}
 
 	for {
 		data := pow.prepareData(nonce)
@@ -71,7 +76,7 @@ func (pow *ProofOfWork) prepareData(nonce int) []byte {
 	data := strconv.Itoa(pow.Block.Index) +
 		pow.Block.PreviousHash +
 		pow.Block.Timestamp.Format(time.RFC3339) +
-		pow.Block.Data +
+		pow.Block.MerkleRoot +
 		strconv.Itoa(nonce)
 	return []byte(data)
 }
