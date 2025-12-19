@@ -69,6 +69,11 @@ func (bc *Blockchain) AddTransactionToMempool(tx *Transaction) error {
 
 // AddBlock adds a new block with transactions to the blockchain
 func (bc *Blockchain) AddBlock(transactions []*Transaction) error {
+	return bc.AddBlockWithReward(transactions, "")
+}
+
+// AddBlockWithReward adds a new block with transactions and miner reward
+func (bc *Blockchain) AddBlockWithReward(transactions []*Transaction, minerAddress string) error {
 	// Validate all transactions before adding
 	for _, tx := range transactions {
 		if err := bc.ValidateTransaction(tx); err != nil {
@@ -82,14 +87,23 @@ func (bc *Blockchain) AddBlock(transactions []*Transaction) error {
 
 	prevBlock := bc.Blocks[len(bc.Blocks)-1]
 
-	// Create Merkle tree from transactions
-	merkleTree := NewMerkleTree(transactions)
+	// Add block reward transaction if miner address is provided
+	allTransactions := make([]*Transaction, len(transactions))
+	copy(allTransactions, transactions)
+	
+	if minerAddress != "" {
+		blockRewardTx := NewBlockRewardTransaction(minerAddress, false)
+		allTransactions = append([]*Transaction{blockRewardTx}, allTransactions...)
+	}
+
+	// Create Merkle tree from all transactions (including reward)
+	merkleTree := NewMerkleTree(allTransactions)
 	merkleRoot := merkleTree.GetRootHash()
 
 	newBlock := &Block{
 		Index:        prevBlock.Index + 1,
 		Timestamp:    time.Now(),
-		Transactions: transactions,
+		Transactions: allTransactions,
 		MerkleRoot:   merkleRoot,
 		PreviousHash: prevBlock.Hash,
 		Nonce:        0,
@@ -103,14 +117,22 @@ func (bc *Blockchain) AddBlock(transactions []*Transaction) error {
 
 	bc.Blocks = append(bc.Blocks, newBlock)
 
-	// Remove transactions from mempool
+	// Remove transactions from mempool (excluding reward transaction)
 	txHashes := make([]string, len(transactions))
 	for i, tx := range transactions {
 		txHashes[i] = hex.EncodeToString(tx.Hash())
 	}
 	bc.Mempool.RemoveTransactions(txHashes)
 
-	fmt.Printf("Block #%d added to the blockchain!\n\n", newBlock.Index)
+	// Display reward info
+	if minerAddress != "" {
+		totalFees := CalculateTotalFees(transactions)
+		fmt.Printf("Block #%d added to the blockchain!\n", newBlock.Index)
+		fmt.Printf("  %s\n\n", FormatRewardInfo(minerAddress, BlockReward, totalFees))
+	} else {
+		fmt.Printf("Block #%d added to the blockchain!\n\n", newBlock.Index)
+	}
+	
 	return nil
 }
 
@@ -121,6 +143,15 @@ func (bc *Blockchain) AddBlockFromMempool(maxTransactions int) error {
 		return fmt.Errorf("no transactions in mempool")
 	}
 	return bc.AddBlock(transactions)
+}
+
+// AddBlockFromMempoolWithReward creates a block from mempool with miner reward
+func (bc *Blockchain) AddBlockFromMempoolWithReward(maxTransactions int, minerAddress string) error {
+	transactions := bc.Mempool.GetTransactionsForBlock(maxTransactions)
+	if len(transactions) == 0 {
+		return fmt.Errorf("no transactions in mempool")
+	}
+	return bc.AddBlockWithReward(transactions, minerAddress)
 }
 
 // IsValid validates the integrity of the blockchain
