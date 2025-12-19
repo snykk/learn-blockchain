@@ -1,19 +1,22 @@
 package main
 
 import (
+	"encoding/hex"
 	"fmt"
 	"time"
 )
 
 // Blockchain represents a blockchain
 type Blockchain struct {
-	Blocks []*Block
+	Blocks  []*Block
+	Mempool *Mempool
 }
 
 // NewBlockchain creates a new blockchain with genesis block
 func NewBlockchain() *Blockchain {
 	bc := &Blockchain{
-		Blocks: []*Block{},
+		Blocks:  []*Block{},
+		Mempool: NewMempool(),
 	}
 	bc.CreateGenesisBlock()
 	return bc
@@ -48,12 +51,32 @@ func (bc *Blockchain) CreateGenesisBlock() {
 	fmt.Println("Genesis block created and mined!")
 }
 
+// AddTransactionToMempool adds a transaction to the mempool
+func (bc *Blockchain) AddTransactionToMempool(tx *Transaction) error {
+	// Validate transaction first
+	if err := bc.ValidateTransaction(tx); err != nil {
+		return err
+	}
+
+	// Verify signature
+	if tx.Signature != "" && !tx.Verify() {
+		return fmt.Errorf("transaction signature is invalid")
+	}
+
+	// Add to mempool
+	return bc.Mempool.AddTransaction(tx)
+}
+
 // AddBlock adds a new block with transactions to the blockchain
 func (bc *Blockchain) AddBlock(transactions []*Transaction) error {
 	// Validate all transactions before adding
 	for _, tx := range transactions {
 		if err := bc.ValidateTransaction(tx); err != nil {
 			return err
+		}
+		// Verify signature
+		if tx.Signature != "" && !tx.Verify() {
+			return fmt.Errorf("transaction has invalid signature")
 		}
 	}
 
@@ -79,8 +102,25 @@ func (bc *Blockchain) AddBlock(transactions []*Transaction) error {
 	newBlock.Hash = hash
 
 	bc.Blocks = append(bc.Blocks, newBlock)
+
+	// Remove transactions from mempool
+	txHashes := make([]string, len(transactions))
+	for i, tx := range transactions {
+		txHashes[i] = hex.EncodeToString(tx.Hash())
+	}
+	bc.Mempool.RemoveTransactions(txHashes)
+
 	fmt.Printf("Block #%d added to the blockchain!\n\n", newBlock.Index)
 	return nil
+}
+
+// AddBlockFromMempool creates a block from transactions in mempool
+func (bc *Blockchain) AddBlockFromMempool(maxTransactions int) error {
+	transactions := bc.Mempool.GetTransactionsForBlock(maxTransactions)
+	if len(transactions) == 0 {
+		return fmt.Errorf("no transactions in mempool")
+	}
+	return bc.AddBlock(transactions)
 }
 
 // IsValid validates the integrity of the blockchain
@@ -99,14 +139,13 @@ func (bc *Blockchain) IsValid() bool {
 		// Validate transaction signatures (skip genesis block)
 		if i > 0 {
 			for j, tx := range currentBlock.Transactions {
-				// Skip unsigned transactions (like genesis)
+				// Skip unsigned transactions (like genesis/coinbase)
 				if tx.Signature == "" {
 					continue
 				}
-				// Note: In a real implementation, we'd need to store public keys
-				// For now, we'll just check that signature exists and is valid format
-				if len(tx.Signature) != 128 { // 64 bytes = 128 hex chars
-					fmt.Printf("Block #%d: Transaction #%d has invalid signature format\n", currentBlock.Index, j+1)
+				// Full signature verification using stored public key
+				if !tx.Verify() {
+					fmt.Printf("Block #%d: Transaction #%d has invalid signature\n", currentBlock.Index, j+1)
 					return false
 				}
 			}

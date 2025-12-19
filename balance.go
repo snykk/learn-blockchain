@@ -50,4 +50,3 @@ func (bc *Blockchain) AddCoinbaseTransaction(to string, amount float64) *Transac
 	// Coinbase transaction has empty From address
 	return NewTransaction("", to, amount)
 }
-
