@@ -15,4 +15,3 @@ func CalculateHash(data string) string {
 func BytesToHex(bytes []byte) string {
 	return hex.EncodeToString(bytes)
 }
-

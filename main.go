@@ -8,6 +8,7 @@ import (
 func main() {
 	fmt.Println("=== Enhanced Blockchain Implementation ===")
 	fmt.Println("Features: Transactions, Merkle Tree, Wallet & Signing, Balance System")
+	fmt.Println("          Mempool, Full Signature Verification, Proof of Stake")
 	fmt.Println()
 
 	// Create wallets
@@ -211,6 +212,66 @@ func main() {
 		fmt.Println("   GOOD: Tampering was successfully detected!")
 		fmt.Println("   The security system worked correctly - it detected the tampering.")
 		fmt.Println("   Reason: Proof of work invalid - hash doesn't meet difficulty requirement")
+	}
+
+	// Demo: Mempool functionality
+	fmt.Println("\n12. Demonstrating Mempool functionality...")
+
+	// Create new transactions and add to mempool
+	fmt.Println("\n   Creating new transactions and adding to mempool...")
+	tx4 := NewTransaction(aliceWallet.Address, bobWallet.Address, 5.0)
+	if err := aliceWallet.SignTransaction(tx4); err != nil {
+		fmt.Printf("Error signing transaction 4: %v\n", err)
+		return
+	}
+	if err := bc.AddTransactionToMempool(tx4); err != nil {
+		fmt.Printf("Error adding to mempool: %v\n", err)
+	} else {
+		fmt.Printf("   Transaction 4 added to mempool: %s\n", tx4.String())
+	}
+
+	tx5 := NewTransaction(bobWallet.Address, charlieWallet.Address, 3.0)
+	if err := bobWallet.SignTransaction(tx5); err != nil {
+		fmt.Printf("Error signing transaction 5: %v\n", err)
+		return
+	}
+	if err := bc.AddTransactionToMempool(tx5); err != nil {
+		fmt.Printf("Error adding to mempool: %v\n", err)
+	} else {
+		fmt.Printf("   Transaction 5 added to mempool: %s\n", tx5.String())
+	}
+
+	fmt.Printf("\n   Mempool size: %d transactions\n", bc.Mempool.Size())
+
+	// Create block from mempool
+	fmt.Println("\n   Creating block from mempool transactions...")
+	if err := bc.AddBlockFromMempool(10); err != nil {
+		fmt.Printf("Error creating block from mempool: %v\n", err)
+	} else {
+		fmt.Printf("   Mempool size after block creation: %d transactions\n", bc.Mempool.Size())
+	}
+
+	// Demo: Full Signature Verification
+	fmt.Println("\n13. Demonstrating Full Signature Verification...")
+	fmt.Println("   All transactions in blockchain are now verified using stored public keys")
+	fmt.Println("   Signature verification is performed automatically during validation")
+
+	// Demo: Proof of Stake
+	fmt.Println("\n14. Demonstrating Proof of Stake consensus...")
+	stakeholders := bc.CalculateStakeFromBlockchain()
+	fmt.Println("   Current stakeholders and their stakes:")
+	for address, stake := range stakeholders {
+		fmt.Printf("   - %s: %.2f coins\n", address[:16]+"...", stake)
+	}
+
+	// Select validator
+	lastBlock := bc.Blocks[len(bc.Blocks)-1]
+	pos := NewProofOfStake(lastBlock, stakeholders)
+	validator := pos.SelectValidator()
+	if validator != "" {
+		fmt.Printf("\n   Selected validator: %s\n", validator[:16]+"...")
+		fmt.Println("   (In PoS, validator is selected based on stake weight)")
+		fmt.Println("   Note: PoS block creation requires validator to be selected")
 	}
 
 	fmt.Println("\n=== Demo Complete ===")

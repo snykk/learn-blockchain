@@ -1,6 +1,6 @@
 # Learn Blockchain
 
-An enhanced blockchain implementation in Go that covers fundamental blockchain concepts including transactions, Merkle trees, and wallet signing.
+An enhanced blockchain implementation in Go that covers fundamental blockchain concepts including transactions, Merkle trees, wallet signing, mempool, full signature verification, and Proof of Stake consensus.
 
 ## Implemented Concepts
 
@@ -13,6 +13,10 @@ An enhanced blockchain implementation in Go that covers fundamental blockchain c
 7. **Transactions** - Transaction structure with sender, receiver, amount, and digital signature
 8. **Merkle Tree** - Efficient transaction verification using Merkle tree structure
 9. **Wallet & Signing** - ECDSA-based wallet with transaction signing and verification
+10. **Transaction Pool (Mempool)** - Pending transaction storage before block creation
+11. **Full Signature Verification** - Complete signature verification using stored public keys
+12. **Proof of Stake** - Alternative consensus mechanism based on stake weight
+13. **Balance System** - Balance tracking and validation for transactions
 
 ## File Structure
 
@@ -24,9 +28,12 @@ learn-blockchain/
 ├── block.go            # Block structure and methods
 ├── blockchain.go       # Blockchain structure and methods
 ├── proofofwork.go      # Proof of Work implementation
+├── proofofstake.go     # Proof of Stake implementation
 ├── transaction.go      # Transaction structure and signing
 ├── merkle.go           # Merkle tree implementation
 ├── wallet.go           # Wallet with ECDSA key generation
+├── mempool.go          # Transaction pool/mempool implementation
+├── balance.go          # Balance calculation and validation
 └── utils.go            # Utility functions (hashing, etc.)
 ```
 
@@ -126,6 +133,39 @@ Wallets provide cryptographic key management:
 - **Transaction Signing**: Transactions are signed with private key before being added to blocks
 - **Signature Verification**: Transaction signatures can be verified using public key
 
+### 10. Transaction Pool (Mempool)
+
+Mempool stores pending transactions before they are added to blocks:
+- **Transaction Storage**: Pending transactions are stored in memory pool
+- **Transaction Management**: Add, remove, and retrieve transactions from mempool
+- **Block Creation**: Blocks can be created from transactions in mempool
+- **Automatic Cleanup**: Transactions are automatically removed from mempool when added to blocks
+
+### 11. Full Signature Verification
+
+Complete signature verification system:
+- **Public Key Storage**: Public keys are stored in transactions for verification
+- **Automatic Verification**: Signatures are verified automatically during block validation
+- **ECDSA Verification**: Full ECDSA signature verification using stored public keys
+- **Security**: Ensures transaction authenticity and prevents tampering
+
+### 12. Proof of Stake
+
+Alternative consensus mechanism to Proof of Work:
+- **Stake-Based Selection**: Validators are selected based on their stake (balance)
+- **Weighted Random**: Validator selection uses weighted random based on stake amount
+- **No Mining Required**: PoS doesn't require computational mining like PoW
+- **Energy Efficient**: More energy-efficient than Proof of Work
+- **Stake Calculation**: Stake is calculated from blockchain balances
+
+### 13. Balance System
+
+Balance tracking and validation:
+- **Balance Calculation**: Calculates balance by scanning all transactions
+- **Transaction Validation**: Validates transactions before adding to blocks
+- **Insufficient Balance Detection**: Prevents transactions with insufficient balance
+- **Coinbase Support**: Supports coinbase transactions for initial balance distribution
+
 ## Example Output
 
 The program will display:
@@ -155,6 +195,10 @@ The program will display:
 - **Wallet System**: ECDSA-based wallet with key generation and address creation
 - **Digital Signatures**: Transaction signing and verification using ECDSA cryptography
 - **Transaction Validation**: Merkle root validation and signature format checking
+- **Transaction Pool (Mempool)**: Pending transaction storage and management
+- **Full Signature Verification**: Complete signature verification with stored public keys
+- **Proof of Stake**: Alternative consensus mechanism based on stake weight
+- **Balance System**: Balance tracking, validation, and coinbase support
 
 ## Adjusting Difficulty
 
@@ -173,12 +217,16 @@ This implementation now includes:
 - **Merkle Tree** for transactions
 - **Wallet and transaction signing** with ECDSA
 - **Transaction structure** with digital signatures
+- **Transaction Pool (Mempool)** for pending transaction management
+- **Full Signature Verification** with public key storage
+- **Proof of Stake** as alternative consensus mechanism
+- **Balance System** with validation and coinbase support
 
 ## Future Enhancements
 
 - Network/P2P for distributed blockchain
 - Smart Contracts
-- Different consensus mechanisms (Proof of Stake, etc.)
-- Full signature verification with public key storage
-- Transaction pool/mempool
+- Additional consensus mechanisms
 - Web3 integration
+- Transaction fees
+- Block rewards

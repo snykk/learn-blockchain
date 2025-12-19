@@ -2,6 +2,7 @@ package main
 
 import (
 	"crypto/ecdsa"
+	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/hex"
@@ -15,6 +16,7 @@ type Transaction struct {
 	To        string
 	Amount    float64
 	Signature string // Hex-encoded signature
+	PublicKey string // Hex-encoded public key (X + Y coordinates) for verification
 }
 
 // NewTransaction creates a new transaction
@@ -26,7 +28,7 @@ func NewTransaction(from, to string, amount float64) *Transaction {
 	}
 }
 
-// Sign signs the transaction with a private key
+// Sign signs the transaction with a private key and stores the public key
 func (tx *Transaction) Sign(privateKey *ecdsa.PrivateKey) error {
 	// Create hash of transaction data
 	hash := tx.Hash()
@@ -41,11 +43,60 @@ func (tx *Transaction) Sign(privateKey *ecdsa.PrivateKey) error {
 	signature := append(r.Bytes(), s.Bytes()...)
 	tx.Signature = hex.EncodeToString(signature)
 
+	// Store public key for verification
+	publicKey := &privateKey.PublicKey
+	publicKeyBytes := append(publicKey.X.Bytes(), publicKey.Y.Bytes()...)
+	tx.PublicKey = hex.EncodeToString(publicKeyBytes)
+
 	return nil
 }
 
-// Verify verifies the transaction signature
-func (tx *Transaction) Verify(publicKey *ecdsa.PublicKey) bool {
+// Verify verifies the transaction signature using stored public key
+func (tx *Transaction) Verify() bool {
+	if tx.Signature == "" || tx.PublicKey == "" {
+		return false
+	}
+
+	// Decode public key
+	publicKeyBytes, err := hex.DecodeString(tx.PublicKey)
+	if err != nil {
+		return false
+	}
+
+	// P-256 curve: public key is 64 bytes (32 bytes X + 32 bytes Y)
+	if len(publicKeyBytes) != 64 {
+		return false
+	}
+
+	// Reconstruct public key
+	publicKey := &ecdsa.PublicKey{
+		Curve: elliptic.P256(),
+		X:     new(big.Int).SetBytes(publicKeyBytes[:32]),
+		Y:     new(big.Int).SetBytes(publicKeyBytes[32:]),
+	}
+
+	// Decode signature
+	signatureBytes, err := hex.DecodeString(tx.Signature)
+	if err != nil {
+		return false
+	}
+
+	if len(signatureBytes) != 64 { // 32 bytes for r + 32 bytes for s
+		return false
+	}
+
+	r := new(big.Int).SetBytes(signatureBytes[:32])
+	s := new(big.Int).SetBytes(signatureBytes[32:])
+
+	// Create hash of transaction data
+	hash := tx.Hash()
+
+	// Verify signature
+	return ecdsa.Verify(publicKey, hash, r, s)
+}
+
+// VerifyWithPublicKey verifies the transaction signature with provided public key
+func (tx *Transaction) VerifyWithPublicKey(publicKey *ecdsa.PublicKey) bool {
 	if tx.Signature == "" {
 		return false
 	}
