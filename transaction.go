@@ -15,8 +15,9 @@ type Transaction struct {
 	From      string
 	To        string
 	Amount    float64
-	Signature string // Hex-encoded signature
-	PublicKey string // Hex-encoded public key (X + Y coordinates) for verification
+	Fee       float64 // Transaction fee paid by sender
+	Signature string  // Hex-encoded signature
+	PublicKey string  // Hex-encoded public key (X + Y coordinates) for verification
 }
 
 // NewTransaction creates a new transaction
@@ -25,6 +26,17 @@ func NewTransaction(from, to string, amount float64) *Transaction {
 		From:   from,
 		To:     to,
 		Amount: amount,
+		Fee:    0.0, // Default no fee
+	}
+}
+
+// NewTransactionWithFee creates a new transaction with fee
+func NewTransactionWithFee(from, to string, amount, fee float64) *Transaction {
+	return &Transaction{
+		From:   from,
+		To:     to,
+		Amount: amount,
+		Fee:    fee,
 	}
 }
 
@@ -123,12 +135,20 @@ func (tx *Transaction) VerifyWithPublicKey(publicKey *ecdsa.PublicKey) bool {
 
 // Hash returns the SHA-256 hash of the transaction
 func (tx *Transaction) Hash() []byte {
-	data := fmt.Sprintf("%s%s%.8f", tx.From, tx.To, tx.Amount)
+	data := fmt.Sprintf("%s%s%.8f%.8f", tx.From, tx.To, tx.Amount, tx.Fee)
 	hash := sha256.Sum256([]byte(data))
 	return hash[:]
 }
 
 // String returns a string representation of the transaction
 func (tx *Transaction) String() string {
+	if tx.Fee > 0 {
+		return fmt.Sprintf("From: %s, To: %s, Amount: %.2f, Fee: %.2f", tx.From, tx.To, tx.Amount, tx.Fee)
+	}
 	return fmt.Sprintf("From: %s, To: %s, Amount: %.2f", tx.From, tx.To, tx.Amount)
+}
+
+// TotalCost returns the total cost for the sender (amount + fee)
+func (tx *Transaction) TotalCost() float64 {
+	return tx.Amount + tx.Fee
 }

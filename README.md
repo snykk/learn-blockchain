@@ -17,6 +17,8 @@ An enhanced blockchain implementation in Go that covers fundamental blockchain c
 11. **Full Signature Verification** - Complete signature verification using stored public keys
 12. **Proof of Stake** - Alternative consensus mechanism based on stake weight
 13. **Balance System** - Balance tracking and validation for transactions
+14. **Transaction Fees** - Fees paid by transaction senders for processing
+15. **Block Rewards** - Rewards given to miners/validators for creating blocks
 
 ## File Structure
 
@@ -34,6 +36,7 @@ learn-blockchain/
 ├── wallet.go           # Wallet with ECDSA key generation
 ├── mempool.go          # Transaction pool/mempool implementation
 ├── balance.go          # Balance calculation and validation
+├── rewards.go          # Block rewards and miner rewards calculation
 └── utils.go            # Utility functions (hashing, etc.)
 ```
 
@@ -166,6 +169,24 @@ Balance tracking and validation:
 - **Insufficient Balance Detection**: Prevents transactions with insufficient balance
 - **Coinbase Support**: Supports coinbase transactions for initial balance distribution
 
+### 14. Transaction Fees
+
+Transaction fees incentivize miners and prevent spam:
+- **Fee Field**: Each transaction can include a fee paid by the sender
+- **Fee Deduction**: Fees are deducted from sender's balance along with transaction amount
+- **Total Cost**: Total cost = Amount + Fee
+- **Fee Collection**: Fees are collected by miners who create blocks
+- **Optional Fees**: Transactions can be created with or without fees
+
+### 15. Block Rewards
+
+Block rewards incentivize miners/validators to secure the network:
+- **Block Reward**: Fixed reward (50 coins) given to miner for each block created
+- **Genesis Reward**: Special reward (100 coins) for genesis block
+- **Reward Transaction**: Block reward is added as first transaction in block
+- **Miner Rewards**: Total rewards = Block rewards + Transaction fees collected
+- **Incentive Mechanism**: Rewards encourage participation in network security
+
 ## Example Output
 
 The program will display:
@@ -199,6 +220,8 @@ The program will display:
 - **Full Signature Verification**: Complete signature verification with stored public keys
 - **Proof of Stake**: Alternative consensus mechanism based on stake weight
 - **Balance System**: Balance tracking, validation, and coinbase support
+- **Transaction Fees**: Optional fees for transaction processing
+- **Block Rewards**: Rewards for miners/validators who create blocks
 
 ## Adjusting Difficulty
 
@@ -221,6 +244,8 @@ This implementation now includes:
 - **Full Signature Verification** with public key storage
 - **Proof of Stake** as alternative consensus mechanism
 - **Balance System** with validation and coinbase support
+- **Transaction Fees** for transaction processing
+- **Block Rewards** for miners/validators
 
 ## Future Enhancements
 
@@ -228,5 +253,3 @@ This implementation now includes:
 - Smart Contracts
 - Additional consensus mechanisms
 - Web3 integration
-- Transaction fees
-- Block rewards

@@ -9,6 +9,7 @@ func main() {
 	fmt.Println("=== Enhanced Blockchain Implementation ===")
 	fmt.Println("Features: Transactions, Merkle Tree, Wallet & Signing, Balance System")
 	fmt.Println("          Mempool, Full Signature Verification, Proof of Stake")
+	fmt.Println("          Transaction Fees, Block Rewards")
 	fmt.Println()
 
 	// Create wallets
@@ -66,8 +67,8 @@ func main() {
 	// Create and sign transactions
 	fmt.Println("\n5. Creating and signing transactions...")
 
-	// Transaction 1: Alice sends 10 coins to Bob
-	tx1 := NewTransaction(aliceWallet.Address, bobWallet.Address, 10.0)
+	// Transaction 1: Alice sends 10 coins to Bob (with fee)
+	tx1 := NewTransactionWithFee(aliceWallet.Address, bobWallet.Address, 10.0, 0.5)
 	if err := bc.ValidateTransaction(tx1); err != nil {
 		fmt.Printf("Error: Transaction 1 is invalid: %v\n", err)
 		return
@@ -78,8 +79,8 @@ func main() {
 	}
 	fmt.Printf("   Transaction 1: %s\n", tx1.String())
 
-	// Transaction 2: Bob sends 5 coins to Charlie
-	tx2 := NewTransaction(bobWallet.Address, charlieWallet.Address, 5.0)
+	// Transaction 2: Bob sends 5 coins to Charlie (with fee)
+	tx2 := NewTransactionWithFee(bobWallet.Address, charlieWallet.Address, 5.0, 0.3)
 	if err := bc.ValidateTransaction(tx2); err != nil {
 		fmt.Printf("Error: Transaction 2 is invalid: %v\n", err)
 		return
@@ -90,7 +91,7 @@ func main() {
 	}
 	fmt.Printf("   Transaction 2: %s\n", tx2.String())
 
-	// Transaction 3: Charlie sends 3 coins to Alice
+	// Transaction 3: Charlie sends 3 coins to Alice (no fee)
 	tx3 := NewTransaction(charlieWallet.Address, aliceWallet.Address, 3.0)
 	if err := bc.ValidateTransaction(tx3); err != nil {
 		fmt.Printf("Error: Transaction 3 is invalid: %v\n", err)
@@ -103,31 +104,41 @@ func main() {
 	fmt.Printf("   Transaction 3: %s\n", tx3.String())
 	time.Sleep(1 * time.Second)
 
-	// Add blocks with transactions
-	fmt.Println("\n6. Adding blocks to the blockchain...")
-	if err := bc.AddBlock([]*Transaction{tx1}); err != nil {
+	// Add blocks with transactions and miner rewards
+	fmt.Println("\n6. Adding blocks to the blockchain with miner rewards...")
+
+	// Create a miner wallet
+	minerWallet, err := NewWallet()
+	if err != nil {
+		fmt.Printf("Error creating miner wallet: %v\n", err)
+		return
+	}
+	fmt.Printf("   Miner wallet: %s\n", minerWallet.Address)
+
+	if err := bc.AddBlockWithReward([]*Transaction{tx1}, minerWallet.Address); err != nil {
 		fmt.Printf("Error adding block: %v\n", err)
 		return
 	}
 	time.Sleep(1 * time.Second)
 
-	if err := bc.AddBlock([]*Transaction{tx2}); err != nil {
+	if err := bc.AddBlockWithReward([]*Transaction{tx2}, minerWallet.Address); err != nil {
 		fmt.Printf("Error adding block: %v\n", err)
 		return
 	}
 	time.Sleep(1 * time.Second)
 
-	if err := bc.AddBlock([]*Transaction{tx3}); err != nil {
+	if err := bc.AddBlockWithReward([]*Transaction{tx3}, minerWallet.Address); err != nil {
 		fmt.Printf("Error adding block: %v\n", err)
 		return
 	}
 	time.Sleep(1 * time.Second)
 
 	// Display balances after transactions
-	fmt.Println("\n7. Balances after transactions:")
+	fmt.Println("\n7. Balances after transactions (including fees):")
 	fmt.Printf("   Alice: %.2f coins\n", bc.GetBalance(aliceWallet.Address))
 	fmt.Printf("   Bob: %.2f coins\n", bc.GetBalance(bobWallet.Address))
 	fmt.Printf("   Charlie: %.2f coins\n", bc.GetBalance(charlieWallet.Address))
+	fmt.Printf("   Miner: %.2f coins (from rewards)\n", bc.GetMinerRewards(minerWallet.Address))
 	time.Sleep(1 * time.Second)
 
 	// Display the blockchain
@@ -272,6 +283,26 @@ func main() {
 		fmt.Printf("\n   Selected validator: %s\n", validator[:16]+"...")
 		fmt.Println("   (In PoS, validator is selected based on stake weight)")
 		fmt.Println("   Note: PoS block creation requires validator to be selected")
+	}
+
+	// Demo: Transaction Fees and Block Rewards Summary
+	fmt.Println("\n15. Transaction Fees and Block Rewards Summary...")
+	fmt.Println("   Transaction fees are deducted from sender's balance")
+	fmt.Println("   Block rewards are given to miners for creating blocks")
+	if len(bc.Blocks) > 1 {
+		// Find miner from block rewards
+		for _, block := range bc.Blocks {
+			for _, tx := range block.Transactions {
+				if tx.From == "" && tx.To != "Genesis" {
+					rewards := bc.GetMinerRewards(tx.To)
+					if rewards > 0 {
+						fmt.Printf("   Miner %s total rewards: %.2f coins\n", tx.To[:16]+"...", rewards)
+						fmt.Println("   (Block rewards + transaction fees)")
+						break
+					}
+				}
+			}
+		}
 	}
 
 	fmt.Println("\n=== Demo Complete ===")

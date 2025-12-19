@@ -15,22 +15,26 @@ func (bc *Blockchain) GetBalance(address string) float64 {
 				continue
 			}
 
-			// Subtract if address is sender
+			// Subtract if address is sender (amount + fee)
 			if tx.From == address {
 				balance -= tx.Amount
+				balance -= tx.Fee // Subtract transaction fee
 			}
 
 			// Add if address is receiver
 			if tx.To == address {
 				balance += tx.Amount
 			}
+
+			// Add if address is miner (from block rewards)
+			// Block rewards are handled separately in GetMinerRewards
 		}
 	}
 
 	return balance
 }
 
-// ValidateTransaction checks if a transaction is valid (sufficient balance)
+// ValidateTransaction checks if a transaction is valid (sufficient balance including fee)
 func (bc *Blockchain) ValidateTransaction(tx *Transaction) error {
 	// Skip validation for genesis-like transactions
 	if tx.From == "" {
@@ -38,8 +42,10 @@ func (bc *Blockchain) ValidateTransaction(tx *Transaction) error {
 	}
 
 	balance := bc.GetBalance(tx.From)
-	if balance < tx.Amount {
-		return fmt.Errorf("insufficient balance: address %s has %.2f, trying to send %.2f", tx.From, balance, tx.Amount)
+	totalCost := tx.TotalCost() // Amount + Fee
+	if balance < totalCost {
+		return fmt.Errorf("insufficient balance: address %s has %.2f, trying to send %.2f (amount) + %.2f (fee) = %.2f (total)",
+			tx.From, balance, tx.Amount, tx.Fee, totalCost)
 	}
 
 	return nil
