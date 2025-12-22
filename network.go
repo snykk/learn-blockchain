@@ -136,21 +136,39 @@ func (n *Node) processMessage(msg Message, conn net.Conn) {
 		n.sendMessage(pong, conn)
 
 	case MessageTypeBlockchain:
-		// Receive blockchain data
-		if _, ok := msg.Data.(map[string]interface{}); ok {
-			fmt.Printf("Received blockchain data from %s\n", msg.From)
-			// Note: Full implementation would validate and merge the blockchain
+		// Receive and merge blockchain data
+		if receivedBlocks, err := n.parseBlocksFromMessage(msg); err == nil {
+			fmt.Printf("Received blockchain data from %s (%d blocks)\n", msg.From, len(receivedBlocks))
+			if err := n.Blockchain.MergeBlockchain(receivedBlocks); err != nil {
+				fmt.Printf("Error merging blockchain: %v\n", err)
+			}
+		} else {
+			fmt.Printf("Error parsing blockchain data: %v\n", err)
 		}
 
 	case MessageTypeBlock:
-		// Receive new block
-		fmt.Printf("Received new block from %s\n", msg.From)
-		// Note: Full implementation would validate and add the block
+		// Receive and add new block
+		if block, err := n.parseBlockFromMessage(msg); err == nil {
+			fmt.Printf("Received new block #%d from %s\n", block.Index, msg.From)
+			if err := n.Blockchain.AddReceivedBlock(block); err != nil {
+				fmt.Printf("Error adding block: %v\n", err)
+			}
+		} else {
+			fmt.Printf("Error parsing block: %v\n", err)
+		}
 
 	case MessageTypeTransaction:
-		// Receive new transaction
-		fmt.Printf("Received new transaction from %s\n", msg.From)
-		// Note: Full implementation would validate and add to mempool
+		// Receive and add new transaction to mempool
+		if tx, err := n.parseTransactionFromMessage(msg); err == nil {
+			fmt.Printf("Received new transaction from %s\n", msg.From)
+			if err := n.Blockchain.AddTransactionToMempool(tx); err != nil {
+				fmt.Printf("Error adding transaction to mempool: %v\n", err)
+			} else {
+				fmt.Printf("Transaction added to mempool: %s\n", tx.String())
+			}
+		} else {
+			fmt.Printf("Error parsing transaction: %v\n", err)
+		}
 	}
 }
 
@@ -213,4 +231,91 @@ func (n *Node) SyncBlockchain(peerAddress string) error {
 	}
 
 	return n.SendToPeer(peerAddress, msg)
+}
+
+// parseBlocksFromMessage parses blocks from a message
+func (n *Node) parseBlocksFromMessage(msg Message) ([]*Block, error) {
+	dataBytes, err := json.Marshal(msg.Data)
+	if err != nil {
+		return nil, err
+	}
+
+	var blocks []*Block
+	if err := json.Unmarshal(dataBytes, &blocks); err != nil {
+		return nil, err
+	}
+
+	return blocks, nil
+}
+
+// parseBlockFromMessage parses a block from a message
+func (n *Node) parseBlockFromMessage(msg Message) (*Block, error) {
+	dataBytes, err := json.Marshal(msg.Data)
+	if err != nil {
+		return nil, err
+	}
+
+	var block Block
+	if err := json.Unmarshal(dataBytes, &block); err != nil {
+		return nil, err
+	}
+
+	return &block, nil
+}
+
+// parseTransactionFromMessage parses a transaction from a message
+func (n *Node) parseTransactionFromMessage(msg Message) (*Transaction, error) {
+	dataBytes, err := json.Marshal(msg.Data)
+	if err != nil {
+		return nil, err
+	}
+
+	var tx Transaction
+	if err := json.Unmarshal(dataBytes, &tx); err != nil {
+		return nil, err
+	}
+
+	return &tx, nil
+}
+
+// BroadcastBlock broadcasts a new block to all peers
+func (n *Node) BroadcastBlock(block *Block) {
+	n.mu.RLock()
+	peers := make([]string, 0, len(n.Peers))
+	for peer := range n.Peers {
+		peers = append(peers, peer)
+	}
+	n.mu.RUnlock()
+
+	msg := Message{
+		Type:      MessageTypeBlock,
+		Data:      block,
+		Timestamp: time.Now(),
+		From:      n.GetAddress(),
+	}
+
+	for _, peer := range peers {
+		n.SendToPeer(peer, msg)
+	}
+}
+
+// BroadcastTransaction broadcasts a new transaction to all peers
+func (n *Node) BroadcastTransaction(tx *Transaction) {
+	n.mu.RLock()
+	peers := make([]string, 0, len(n.Peers))
+	for peer := range n.Peers {
+		peers = append(peers, peer)
+	}
+	n.mu.RUnlock()
+
+	msg := Message{
+		Type:      MessageTypeTransaction,
+		Data:      tx,
+		Timestamp: time.Now(),
+		From:      n.GetAddress(),
+	}
+
+	for _, peer := range peers {
+		n.SendToPeer(peer, msg)
+	}
 }
