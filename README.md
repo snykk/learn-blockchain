@@ -19,6 +19,7 @@ An enhanced blockchain implementation in Go that covers fundamental blockchain c
 13. **Balance System** - Balance tracking and validation for transactions
 14. **Transaction Fees** - Fees paid by transaction senders for processing
 15. **Block Rewards** - Rewards given to miners/validators for creating blocks
+16. **Network/P2P** - Peer-to-peer network for distributed blockchain
 
 ## File Structure
 
@@ -187,6 +188,17 @@ Block rewards incentivize miners/validators to secure the network:
 - **Miner Rewards**: Total rewards = Block rewards + Transaction fees collected
 - **Incentive Mechanism**: Rewards encourage participation in network security
 
+### 16. Network/P2P
+
+Peer-to-peer network for distributed blockchain:
+- **Node Structure**: Each node has its own blockchain and peer list
+- **TCP Communication**: Nodes communicate via TCP connections
+- **Message Protocol**: JSON-based message protocol for data exchange
+- **Peer Management**: Add/remove peers, maintain peer connections
+- **Blockchain Synchronization**: Broadcast and sync blockchain with peers
+- **Message Types**: Support for blockchain, block, transaction, ping/pong messages
+- **Network Server**: Each node can run as a server to accept connections
+
 ## Example Output
 
 The program will display:
@@ -222,6 +234,7 @@ The program will display:
 - **Balance System**: Balance tracking, validation, and coinbase support
 - **Transaction Fees**: Optional fees for transaction processing
 - **Block Rewards**: Rewards for miners/validators who create blocks
+- **Network/P2P**: Peer-to-peer network for distributed blockchain
 
 ## Adjusting Difficulty
 
@@ -246,10 +259,11 @@ This implementation now includes:
 - **Balance System** with validation and coinbase support
 - **Transaction Fees** for transaction processing
 - **Block Rewards** for miners/validators
+- **Network/P2P** for distributed blockchain
 
 ## Future Enhancements
 
-- Network/P2P for distributed blockchain
 - Smart Contracts
 - Additional consensus mechanisms
 - Web3 integration
+- Full blockchain synchronization and consensus in network
