@@ -9,7 +9,7 @@ func main() {
 	fmt.Println("=== Enhanced Blockchain Implementation ===")
 	fmt.Println("Features: Transactions, Merkle Tree, Wallet & Signing, Balance System")
 	fmt.Println("          Mempool, Full Signature Verification, Proof of Stake")
-	fmt.Println("          Transaction Fees, Block Rewards")
+	fmt.Println("          Transaction Fees, Block Rewards, Network/P2P")
 	fmt.Println()
 
 	// Create wallets
@@ -304,6 +304,39 @@ func main() {
 			}
 		}
 	}
+
+	// Demo: Network/P2P
+	fmt.Println("\n16. Demonstrating Network/P2P functionality...")
+
+	// Create nodes
+	fmt.Println("\n   Creating network nodes...")
+	node1 := NewNode("localhost", 3001)
+	node2 := NewNode("localhost", 3002)
+	node3 := NewNode("localhost", 3003)
+
+	fmt.Printf("   Node 1: %s\n", node1.GetAddress())
+	fmt.Printf("   Node 2: %s\n", node2.GetAddress())
+	fmt.Printf("   Node 3: %s\n", node3.GetAddress())
+
+	// Add peers
+	fmt.Println("\n   Setting up peer connections...")
+	node1.AddPeer(node2.GetAddress())
+	node1.AddPeer(node3.GetAddress())
+	node2.AddPeer(node1.GetAddress())
+	node2.AddPeer(node3.GetAddress())
+	node3.AddPeer(node1.GetAddress())
+	node3.AddPeer(node2.GetAddress())
+
+	fmt.Printf("   Node 1 peers: %d\n", len(node1.Peers))
+	fmt.Printf("   Node 2 peers: %d\n", len(node2.Peers))
+	fmt.Printf("   Node 3 peers: %d\n", len(node3.Peers))
+
+	fmt.Println("\n   Note: In a real P2P network, nodes would:")
+	fmt.Println("   - Start servers to accept connections")
+	fmt.Println("   - Broadcast new blocks and transactions")
+	fmt.Println("   - Synchronize blockchain with peers")
+	fmt.Println("   - Handle network consensus")
+	fmt.Println("   (Full network demo requires running multiple processes)")
 
 	fmt.Println("\n=== Demo Complete ===")
 }
