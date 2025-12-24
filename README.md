@@ -16,10 +16,11 @@ An enhanced blockchain implementation in Go that covers fundamental blockchain c
 10. **Transaction Pool (Mempool)** - Pending transaction storage before block creation
 11. **Full Signature Verification** - Complete signature verification using stored public keys
 12. **Proof of Stake** - Alternative consensus mechanism based on stake weight
-13. **Balance System** - Balance tracking and validation for transactions
-14. **Transaction Fees** - Fees paid by transaction senders for processing
-15. **Block Rewards** - Rewards given to miners/validators for creating blocks
-16. **Network/P2P** - Peer-to-peer network for distributed blockchain
+13. **Delegated Proof of Stake (DPoS)** - Consensus mechanism with delegate voting and round-robin selection
+14. **Balance System** - Balance tracking and validation for transactions
+15. **Transaction Fees** - Fees paid by transaction senders for processing
+16. **Block Rewards** - Rewards given to miners/validators for creating blocks
+17. **Network/P2P** - Peer-to-peer network for distributed blockchain
 
 ## File Structure
 
@@ -32,6 +33,7 @@ learn-blockchain/
 ├── blockchain.go       # Blockchain structure and methods
 ├── proofofwork.go      # Proof of Work implementation
 ├── proofofstake.go     # Proof of Stake implementation
+├── delegatedproofofstake.go # Delegated Proof of Stake implementation
 ├── transaction.go      # Transaction structure and signing
 ├── merkle.go           # Merkle tree implementation
 ├── wallet.go           # Wallet with ECDSA key generation
@@ -162,7 +164,17 @@ Alternative consensus mechanism to Proof of Work:
 - **Energy Efficient**: More energy-efficient than Proof of Work
 - **Stake Calculation**: Stake is calculated from blockchain balances
 
-### 13. Balance System
+### 13. Delegated Proof of Stake (DPoS)
+
+Advanced consensus mechanism with delegate voting:
+- **Delegate System**: Stakeholders vote for delegates who validate blocks
+- **Top Delegates**: System selects top N delegates (e.g., top 21) based on votes
+- **Round-Robin Selection**: Validators are selected in round-robin fashion from top delegates
+- **Voting Mechanism**: Stakeholders can vote for delegates using their stake
+- **Efficient**: More scalable than PoS with faster block times
+- **Democratic**: Stakeholders have voting power proportional to their stake
+
+### 14. Balance System
 
 Balance tracking and validation:
 - **Balance Calculation**: Calculates balance by scanning all transactions
@@ -170,7 +182,7 @@ Balance tracking and validation:
 - **Insufficient Balance Detection**: Prevents transactions with insufficient balance
 - **Coinbase Support**: Supports coinbase transactions for initial balance distribution
 
-### 14. Transaction Fees
+### 15. Transaction Fees
 
 Transaction fees incentivize miners and prevent spam:
 - **Fee Field**: Each transaction can include a fee paid by the sender
@@ -179,7 +191,7 @@ Transaction fees incentivize miners and prevent spam:
 - **Fee Collection**: Fees are collected by miners who create blocks
 - **Optional Fees**: Transactions can be created with or without fees
 
-### 15. Block Rewards
+### 16. Block Rewards
 
 Block rewards incentivize miners/validators to secure the network:
 - **Block Reward**: Fixed reward (50 coins) given to miner for each block created
@@ -188,7 +200,7 @@ Block rewards incentivize miners/validators to secure the network:
 - **Miner Rewards**: Total rewards = Block rewards + Transaction fees collected
 - **Incentive Mechanism**: Rewards encourage participation in network security
 
-### 16. Network/P2P
+### 17. Network/P2P
 
 Peer-to-peer network for distributed blockchain:
 - **Node Structure**: Each node has its own blockchain and peer list
@@ -231,6 +243,7 @@ The program will display:
 - **Transaction Pool (Mempool)**: Pending transaction storage and management
 - **Full Signature Verification**: Complete signature verification with stored public keys
 - **Proof of Stake**: Alternative consensus mechanism based on stake weight
+- **Delegated Proof of Stake**: Advanced consensus with delegate voting and round-robin selection
 - **Balance System**: Balance tracking, validation, and coinbase support
 - **Transaction Fees**: Optional fees for transaction processing
 - **Block Rewards**: Rewards for miners/validators who create blocks
@@ -256,6 +269,7 @@ This implementation now includes:
 - **Transaction Pool (Mempool)** for pending transaction management
 - **Full Signature Verification** with public key storage
 - **Proof of Stake** as alternative consensus mechanism
+- **Delegated Proof of Stake** with delegate voting system
 - **Balance System** with validation and coinbase support
 - **Transaction Fees** for transaction processing
 - **Block Rewards** for miners/validators
@@ -264,6 +278,5 @@ This implementation now includes:
 ## Future Enhancements
 
 - Smart Contracts
-- Additional consensus mechanisms
 - Web3 integration
-- Full blockchain synchronization and consensus in network
+- Additional consensus mechanisms (PBFT, Raft, etc.)
