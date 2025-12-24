@@ -9,7 +9,8 @@ func main() {
 	fmt.Println("=== Enhanced Blockchain Implementation ===")
 	fmt.Println("Features: Transactions, Merkle Tree, Wallet & Signing, Balance System")
 	fmt.Println("          Mempool, Full Signature Verification, Proof of Stake")
-	fmt.Println("          Transaction Fees, Block Rewards, Network/P2P")
+	fmt.Println("          Delegated Proof of Stake, Transaction Fees, Block Rewards")
+	fmt.Println("          Network/P2P")
 	fmt.Println()
 
 	// Create wallets
@@ -305,8 +306,37 @@ func main() {
 		}
 	}
 
+	// Demo: Delegated Proof of Stake
+	fmt.Println("\n16. Demonstrating Delegated Proof of Stake (DPoS)...")
+	topDelegates := bc.GetTopDelegates(5)
+	fmt.Println("   Top 5 delegates by votes:")
+	for i, delegate := range topDelegates {
+		fmt.Printf("   %d. %s - Votes: %.2f, Stake: %.2f\n", 
+			i+1, delegate.Address[:16]+"...", delegate.Votes, delegate.Stake)
+	}
+
+	// Select validator using DPoS
+	if len(topDelegates) > 0 {
+		lastBlock := bc.Blocks[len(bc.Blocks)-1]
+		stakeholders := bc.CalculateStakeFromBlockchain()
+		dpos := NewDelegatedProofOfStake(lastBlock, stakeholders)
+		
+		// Initialize votes from stakes
+		for address, stake := range stakeholders {
+			if stake > 0 {
+				dpos.Vote(address, address, stake)
+			}
+		}
+		
+		validator := dpos.SelectValidator()
+		if validator != "" {
+			fmt.Printf("\n   Selected validator (round-robin): %s\n", validator[:16]+"...")
+			fmt.Println("   (In DPoS, validators are selected in round-robin from top delegates)")
+		}
+	}
+
 	// Demo: Network/P2P
-	fmt.Println("\n16. Demonstrating Network/P2P functionality...")
+	fmt.Println("\n17. Demonstrating Network/P2P functionality...")
 
 	// Create nodes
 	fmt.Println("\n   Creating network nodes...")
