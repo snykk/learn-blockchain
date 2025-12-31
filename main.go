@@ -10,7 +10,7 @@ func main() {
 	fmt.Println("Features: Transactions, Merkle Tree, Wallet & Signing, Balance System")
 	fmt.Println("          Mempool, Full Signature Verification, Proof of Stake")
 	fmt.Println("          Delegated Proof of Stake, Transaction Fees, Block Rewards")
-	fmt.Println("          Network/P2P")
+	fmt.Println("          Network/P2P, Smart Contracts")
 	fmt.Println()
 
 	// Create wallets
@@ -311,7 +311,7 @@ func main() {
 	topDelegates := bc.GetTopDelegates(5)
 	fmt.Println("   Top 5 delegates by votes:")
 	for i, delegate := range topDelegates {
-		fmt.Printf("   %d. %s - Votes: %.2f, Stake: %.2f\n", 
+		fmt.Printf("   %d. %s - Votes: %.2f, Stake: %.2f\n",
 			i+1, delegate.Address[:16]+"...", delegate.Votes, delegate.Stake)
 	}
 
@@ -320,14 +320,14 @@ func main() {
 		lastBlock := bc.Blocks[len(bc.Blocks)-1]
 		stakeholders := bc.CalculateStakeFromBlockchain()
 		dpos := NewDelegatedProofOfStake(lastBlock, stakeholders)
-		
+
 		// Initialize votes from stakes
 		for address, stake := range stakeholders {
 			if stake > 0 {
 				dpos.Vote(address, address, stake)
 			}
 		}
-		
+
 		validator := dpos.SelectValidator()
 		if validator != "" {
 			fmt.Printf("\n   Selected validator (round-robin): %s\n", validator[:16]+"...")
@@ -367,6 +367,116 @@ func main() {
 	fmt.Println("   - Synchronize blockchain with peers")
 	fmt.Println("   - Handle network consensus")
 	fmt.Println("   (Full network demo requires running multiple processes)")
+
+	// Demo: Smart Contracts
+	fmt.Println("\n18. Demonstrating Smart Contracts...")
+
+	// Deploy a simple storage contract
+	fmt.Println("\n   Deploying Simple Storage Contract...")
+	simpleContract, err := bc.DeployContract(aliceWallet.Address, ContractTypeSimple, "simple_storage")
+	if err != nil {
+		fmt.Printf("Error deploying contract: %v\n", err)
+	} else {
+		fmt.Printf("   Contract deployed at: %s\n", simpleContract.GetAddress())
+		fmt.Printf("   Deployer: %s\n", aliceWallet.Address[:16]+"...")
+
+		// Call set function
+		fmt.Println("\n   Calling set(key='name', value='Alice')...")
+		tx1 := NewContractCallTransaction(aliceWallet.Address, simpleContract.GetAddress(), "set", []string{"name", "Alice"}, 0, 0.1)
+		if err := aliceWallet.SignTransaction(tx1); err == nil {
+			if err := bc.AddBlockWithReward([]*Transaction{tx1}, minerWallet.Address); err != nil {
+				fmt.Printf("Error adding block: %v\n", err)
+			}
+		}
+
+		// Call get function
+		fmt.Println("\n   Calling get(key='name')...")
+		result, err := bc.CallContract(simpleContract.GetAddress(), "get", []string{"name"}, aliceWallet.Address, 0)
+		if err != nil {
+			fmt.Printf("Error calling contract: %v\n", err)
+		} else {
+			fmt.Printf("   Result: %v\n", result)
+		}
+	}
+
+	// Deploy a token contract
+	fmt.Println("\n   Deploying Token Contract...")
+	tokenContract, err := bc.DeployContract(bobWallet.Address, ContractTypeToken, "token_contract")
+	if err != nil {
+		fmt.Printf("Error deploying contract: %v\n", err)
+	} else {
+		fmt.Printf("   Contract deployed at: %s\n", tokenContract.GetAddress())
+
+		// Mint tokens
+		fmt.Println("\n   Minting 100 tokens to Bob...")
+		tx2 := NewContractCallTransaction(bobWallet.Address, tokenContract.GetAddress(), "mint", []string{bobWallet.Address, "100"}, 0, 0.1)
+		if err := bobWallet.SignTransaction(tx2); err == nil {
+			if err := bc.AddBlockWithReward([]*Transaction{tx2}, minerWallet.Address); err != nil {
+				fmt.Printf("Error adding block: %v\n", err)
+			}
+		}
+
+		// Transfer tokens
+		fmt.Println("\n   Transferring 20 tokens from Bob to Charlie...")
+		tx3 := NewContractCallTransaction(bobWallet.Address, tokenContract.GetAddress(), "transfer", []string{charlieWallet.Address, "20"}, 0, 0.1)
+		if err := bobWallet.SignTransaction(tx3); err == nil {
+			if err := bc.AddBlockWithReward([]*Transaction{tx3}, minerWallet.Address); err != nil {
+				fmt.Printf("Error adding block: %v\n", err)
+			}
+		}
+
+		// Check balance
+		fmt.Println("\n   Checking Charlie's token balance...")
+		balance, err := bc.CallContract(tokenContract.GetAddress(), "balanceOf", []string{charlieWallet.Address}, charlieWallet.Address, 0)
+		if err != nil {
+			fmt.Printf("Error calling contract: %v\n", err)
+		} else {
+			fmt.Printf("   Charlie's balance: %.2f tokens\n", balance)
+		}
+	}
+
+	// Deploy a voting contract
+	fmt.Println("\n   Deploying Voting Contract...")
+	votingContract, err := bc.DeployContract(charlieWallet.Address, ContractTypeVoting, "voting_contract")
+	if err != nil {
+		fmt.Printf("Error deploying contract: %v\n", err)
+	} else {
+		fmt.Printf("   Contract deployed at: %s\n", votingContract.GetAddress())
+
+		// Add proposals
+		fmt.Println("\n   Adding proposals...")
+		tx4 := NewContractCallTransaction(charlieWallet.Address, votingContract.GetAddress(), "propose", []string{"Option A"}, 0, 0.1)
+		if err := charlieWallet.SignTransaction(tx4); err == nil {
+			if err := bc.AddBlockWithReward([]*Transaction{tx4}, minerWallet.Address); err != nil {
+				fmt.Printf("Error adding block: %v\n", err)
+			}
+		}
+
+		tx5 := NewContractCallTransaction(charlieWallet.Address, votingContract.GetAddress(), "propose", []string{"Option B"}, 0, 0.1)
+		if err := charlieWallet.SignTransaction(tx5); err == nil {
+			if err := bc.AddBlockWithReward([]*Transaction{tx5}, minerWallet.Address); err != nil {
+				fmt.Printf("Error adding block: %v\n", err)
+			}
+		}
+
+		// Vote
+		fmt.Println("\n   Alice voting for Option A...")
+		tx6 := NewContractCallTransaction(aliceWallet.Address, votingContract.GetAddress(), "vote", []string{"Option A"}, 0, 0.1)
+		if err := aliceWallet.SignTransaction(tx6); err == nil {
+			if err := bc.AddBlockWithReward([]*Transaction{tx6}, minerWallet.Address); err != nil {
+				fmt.Printf("Error adding block: %v\n", err)
+			}
+		}
+
+		// Get results
+		fmt.Println("\n   Getting voting results...")
+		results, err := bc.CallContract(votingContract.GetAddress(), "getResults", []string{}, charlieWallet.Address, 0)
+		if err != nil {
+			fmt.Printf("Error calling contract: %v\n", err)
+		} else {
+			fmt.Printf("   Voting results: %v\n", results)
+		}
+	}
 
 	fmt.Println("\n=== Demo Complete ===")
 }

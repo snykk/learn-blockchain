@@ -8,16 +8,18 @@ import (
 	"encoding/hex"
 	"fmt"
 	"math/big"
+	"strings"
 )
 
 // Transaction represents a transaction in the blockchain
 type Transaction struct {
-	From      string
-	To        string
-	Amount    float64
-	Fee       float64 // Transaction fee paid by sender
-	Signature string  // Hex-encoded signature
-	PublicKey string  // Hex-encoded public key (X + Y coordinates) for verification
+	From         string
+	To           string
+	Amount       float64
+	Fee          float64 // Transaction fee paid by sender
+	Signature    string  // Hex-encoded signature
+	PublicKey    string  // Hex-encoded public key (X + Y coordinates) for verification
+	ContractData string  // Contract call data (format: "function:arg1,arg2,arg3")
 }
 
 // NewTransaction creates a new transaction
@@ -37,6 +39,24 @@ func NewTransactionWithFee(from, to string, amount, fee float64) *Transaction {
 		To:     to,
 		Amount: amount,
 		Fee:    fee,
+	}
+}
+
+// NewContractCallTransaction creates a transaction for calling a smart contract
+func NewContractCallTransaction(from, contractAddress, function string, args []string, value, fee float64) *Transaction {
+	// Format contract call data: "function:arg1,arg2,arg3"
+	argsStr := ""
+	if len(args) > 0 {
+		argsStr = strings.Join(args, ",")
+	}
+	contractData := fmt.Sprintf("%s:%s", function, argsStr)
+
+	return &Transaction{
+		From:         from,
+		To:           contractAddress,
+		Amount:       value,
+		Fee:          fee,
+		ContractData: contractData,
 	}
 }
 
@@ -135,17 +155,21 @@ func (tx *Transaction) VerifyWithPublicKey(publicKey *ecdsa.PublicKey) bool {
 
 // Hash returns the SHA-256 hash of the transaction
 func (tx *Transaction) Hash() []byte {
-	data := fmt.Sprintf("%s%s%.8f%.8f", tx.From, tx.To, tx.Amount, tx.Fee)
+	data := fmt.Sprintf("%s%s%.8f%.8f%s", tx.From, tx.To, tx.Amount, tx.Fee, tx.ContractData)
 	hash := sha256.Sum256([]byte(data))
 	return hash[:]
 }
 
 // String returns a string representation of the transaction
 func (tx *Transaction) String() string {
+	result := fmt.Sprintf("From: %s, To: %s, Amount: %.2f", tx.From, tx.To, tx.Amount)
 	if tx.Fee > 0 {
-		return fmt.Sprintf("From: %s, To: %s, Amount: %.2f, Fee: %.2f", tx.From, tx.To, tx.Amount, tx.Fee)
+		result += fmt.Sprintf(", Fee: %.2f", tx.Fee)
 	}
-	return fmt.Sprintf("From: %s, To: %s, Amount: %.2f", tx.From, tx.To, tx.Amount)
+	if tx.ContractData != "" {
+		result += fmt.Sprintf(", ContractCall: %s", tx.ContractData)
+	}
+	return result
 }
 
 // TotalCost returns the total cost for the sender (amount + fee)

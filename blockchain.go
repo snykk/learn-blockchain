@@ -8,15 +8,17 @@ import (
 
 // Blockchain represents a blockchain
 type Blockchain struct {
-	Blocks  []*Block
-	Mempool *Mempool
+	Blocks           []*Block
+	Mempool          *Mempool
+	ContractRegistry *ContractRegistry
 }
 
 // NewBlockchain creates a new blockchain with genesis block
 func NewBlockchain() *Blockchain {
 	bc := &Blockchain{
-		Blocks:  []*Block{},
-		Mempool: NewMempool(),
+		Blocks:           []*Block{},
+		Mempool:          NewMempool(),
+		ContractRegistry: NewContractRegistry(),
 	}
 	bc.CreateGenesisBlock()
 	return bc
@@ -90,7 +92,7 @@ func (bc *Blockchain) AddBlockWithReward(transactions []*Transaction, minerAddre
 	// Add block reward transaction if miner address is provided
 	allTransactions := make([]*Transaction, len(transactions))
 	copy(allTransactions, transactions)
-	
+
 	if minerAddress != "" {
 		blockRewardTx := NewBlockRewardTransaction(minerAddress, false)
 		allTransactions = append([]*Transaction{blockRewardTx}, allTransactions...)
@@ -117,6 +119,23 @@ func (bc *Blockchain) AddBlockWithReward(transactions []*Transaction, minerAddre
 
 	bc.Blocks = append(bc.Blocks, newBlock)
 
+	// Process contract calls
+	for _, tx := range transactions {
+		if tx.ContractData != "" && IsContractAddress(tx.To) {
+			// Parse contract call
+			call, err := ParseContractCall(tx.ContractData)
+			if err == nil {
+				// Execute contract call
+				result, err := bc.CallContract(tx.To, call.Function, call.Args, tx.From, tx.Amount)
+				if err != nil {
+					fmt.Printf("Contract call failed: %v\n", err)
+				} else {
+					fmt.Printf("Contract call result: %v\n", result)
+				}
+			}
+		}
+	}
+
 	// Remove transactions from mempool (excluding reward transaction)
 	txHashes := make([]string, len(transactions))
 	for i, tx := range transactions {
@@ -132,7 +151,7 @@ func (bc *Blockchain) AddBlockWithReward(transactions []*Transaction, minerAddre
 	} else {
 		fmt.Printf("Block #%d added to the blockchain!\n\n", newBlock.Index)
 	}
-	
+
 	return nil
 }
 
@@ -214,4 +233,24 @@ func (bc *Blockchain) Print() {
 		fmt.Println(block.String())
 		fmt.Println("---")
 	}
+}
+
+// DeployContract deploys a new smart contract
+func (bc *Blockchain) DeployContract(deployer string, contractType ContractType, bytecode string) (*SmartContract, error) {
+	blockIndex := int64(len(bc.Blocks))
+	contract, err := bc.ContractRegistry.DeployContract(deployer, contractType, bytecode, blockIndex)
+	if err != nil {
+		return nil, err
+	}
+	return contract, nil
+}
+
+// CallContract calls a function on a smart contract
+func (bc *Blockchain) CallContract(contractAddress string, function string, args []string, caller string, value float64) (interface{}, error) {
+	return bc.ContractRegistry.CallContract(contractAddress, function, args, caller, value)
+}
+
+// GetContract retrieves a contract by address
+func (bc *Blockchain) GetContract(address string) (*SmartContract, error) {
+	return bc.ContractRegistry.GetContract(address)
 }
