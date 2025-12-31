@@ -21,6 +21,7 @@ An enhanced blockchain implementation in Go that covers fundamental blockchain c
 15. **Transaction Fees** - Fees paid by transaction senders for processing
 16. **Block Rewards** - Rewards given to miners/validators for creating blocks
 17. **Network/P2P** - Peer-to-peer network for distributed blockchain
+18. **Smart Contracts** - Executable contracts deployed on the blockchain
 
 ## File Structure
 
@@ -40,6 +41,7 @@ learn-blockchain/
 ├── mempool.go          # Transaction pool/mempool implementation
 ├── balance.go          # Balance calculation and validation
 ├── rewards.go          # Block rewards and miner rewards calculation
+├── smartcontract.go    # Smart contract implementation
 └── utils.go            # Utility functions (hashing, etc.)
 ```
 
@@ -211,6 +213,17 @@ Peer-to-peer network for distributed blockchain:
 - **Message Types**: Support for blockchain, block, transaction, ping/pong messages
 - **Network Server**: Each node can run as a server to accept connections
 
+### 18. Smart Contracts
+
+Executable contracts deployed on the blockchain:
+- **Contract Types**: Support for Simple Storage, Token (ERC-20 like), Escrow, and Voting contracts
+- **Contract Deployment**: Deploy contracts with unique addresses derived from deployer and block index
+- **Contract Execution**: Execute contract functions with arguments and value
+- **Contract State**: Persistent state storage for each contract
+- **Contract Registry**: Central registry to manage all deployed contracts
+- **Contract Calls**: Transactions can include contract call data to interact with smart contracts
+- **State Management**: Each contract maintains its own state that persists across calls
+
 ## Example Output
 
 The program will display:
@@ -248,6 +261,7 @@ The program will display:
 - **Transaction Fees**: Optional fees for transaction processing
 - **Block Rewards**: Rewards for miners/validators who create blocks
 - **Network/P2P**: Peer-to-peer network for distributed blockchain
+- **Smart Contracts**: Executable contracts with state management and function calls
 
 ## Adjusting Difficulty
 
@@ -274,9 +288,9 @@ This implementation now includes:
 - **Transaction Fees** for transaction processing
 - **Block Rewards** for miners/validators
 - **Network/P2P** for distributed blockchain
+- **Smart Contracts** with multiple contract types and state management
 
 ## Future Enhancements
 
-- Smart Contracts
 - Web3 integration
 - Additional consensus mechanisms (PBFT, Raft, etc.)
