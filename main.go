@@ -10,7 +10,7 @@ func main() {
 	fmt.Println("Features: Transactions, Merkle Tree, Wallet & Signing, Balance System")
 	fmt.Println("          Mempool, Full Signature Verification, Proof of Stake")
 	fmt.Println("          Delegated Proof of Stake, Transaction Fees, Block Rewards")
-	fmt.Println("          Network/P2P, Smart Contracts")
+	fmt.Println("          Network/P2P, Smart Contracts, Web3 Integration, PBFT Consensus")
 	fmt.Println()
 
 	// Create wallets
@@ -477,6 +477,74 @@ func main() {
 			fmt.Printf("   Voting results: %v\n", results)
 		}
 	}
+
+	// Demo: Web3 Integration
+	fmt.Println("\n19. Demonstrating Web3 Integration...")
+
+	fmt.Println("\n   Starting Web3 JSON-RPC server...")
+	web3Server := NewWeb3Server(bc, "localhost", 8545)
+	if err := web3Server.Start(); err != nil {
+		fmt.Printf("Error starting Web3 server: %v\n", err)
+	} else {
+		fmt.Println("   ✓ Web3 server started on http://localhost:8545")
+		fmt.Println("\n   Available Web3 API endpoints:")
+		fmt.Println("   - web3_clientVersion - Get client version")
+		fmt.Println("   - eth_blockNumber - Get latest block number")
+		fmt.Println("   - eth_getBalance - Get account balance")
+		fmt.Println("   - eth_getBlockByNumber - Get block by number")
+		fmt.Println("   - eth_getTransactionCount - Get transaction count")
+		fmt.Println("   - eth_sendTransaction - Send new transaction")
+		fmt.Println("   - eth_call - Execute contract call (read-only)")
+		fmt.Println("   - eth_getCode - Get contract code")
+
+		fmt.Println("\n   Example curl commands:")
+		fmt.Println("   curl -X POST http://localhost:8545 \\")
+		fmt.Println("     -H \"Content-Type: application/json\" \\")
+		fmt.Println("     -d '{\"jsonrpc\":\"2.0\",\"method\":\"eth_blockNumber\",\"params\":[],\"id\":1}'")
+
+		fmt.Println("\n   Note: Web3 server is running in background")
+		fmt.Println("   You can test the endpoints using curl or Postman")
+
+		// Give server time to start
+		time.Sleep(1 * time.Second)
+	}
+
+	// Demo: PBFT Consensus
+	fmt.Println("\n20. Demonstrating PBFT (Practical Byzantine Fault Tolerance) Consensus...")
+
+	fmt.Println("\n   Setting up PBFT network...")
+	// Create list of nodes (addresses)
+	pbftNodes := []string{
+		aliceWallet.Address,
+		bobWallet.Address,
+		charlieWallet.Address,
+		minerWallet.Address,
+	}
+
+	fmt.Printf("   Total nodes: %d\n", len(pbftNodes))
+	fmt.Printf("   Byzantine fault tolerance: Can tolerate %d faulty nodes\n", (len(pbftNodes)-1)/3)
+	fmt.Printf("   Required votes (quorum): %d (2f+1)\n", 2*((len(pbftNodes)-1)/3)+1)
+
+	// Create transactions for PBFT block
+	fmt.Println("\n   Creating transactions for PBFT block...")
+	pbftTx1 := NewTransaction(aliceWallet.Address, bobWallet.Address, 2.0)
+	if err := aliceWallet.SignTransaction(pbftTx1); err != nil {
+		fmt.Printf("Error signing transaction: %v\n", err)
+	} else {
+		fmt.Printf("   ✓ Transaction 1: Alice -> Bob (2.0 coins)\n")
+
+		// Create block using PBFT consensus
+		fmt.Println("\n   Creating block using PBFT consensus...")
+		if err := bc.CreateBlockWithPBFT([]*Transaction{pbftTx1}, pbftNodes, aliceWallet.Address); err != nil {
+			fmt.Printf("Error creating PBFT block: %v\n", err)
+		}
+	}
+
+	fmt.Println("\n   PBFT Consensus Features:")
+	fmt.Println("   ✓ Three-phase protocol (Pre-Prepare, Prepare, Commit)")
+	fmt.Println("   ✓ Byzantine fault tolerance (tolerates malicious nodes)")
+	fmt.Println("   ✓ Deterministic finality (no forks)")
+	fmt.Println("   ✓ Quorum-based consensus (2f+1 votes required)")
 
 	fmt.Println("\n=== Demo Complete ===")
 }
