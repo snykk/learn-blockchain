@@ -22,6 +22,8 @@ An enhanced blockchain implementation in Go that covers fundamental blockchain c
 16. **Block Rewards** - Rewards given to miners/validators for creating blocks
 17. **Network/P2P** - Peer-to-peer network for distributed blockchain
 18. **Smart Contracts** - Executable contracts deployed on the blockchain
+19. **Web3 Integration** - Web3 JSON-RPC API server with Ethereum-compatible endpoints
+20. **PBFT Consensus** - Practical Byzantine Fault Tolerance consensus mechanism
 
 ## File Structure
 
@@ -35,6 +37,7 @@ learn-blockchain/
 ├── proofofwork.go      # Proof of Work implementation
 ├── proofofstake.go     # Proof of Stake implementation
 ├── delegatedproofofstake.go # Delegated Proof of Stake implementation
+├── pbft.go             # PBFT consensus implementation
 ├── transaction.go      # Transaction structure and signing
 ├── merkle.go           # Merkle tree implementation
 ├── wallet.go           # Wallet with ECDSA key generation
@@ -42,6 +45,9 @@ learn-blockchain/
 ├── balance.go          # Balance calculation and validation
 ├── rewards.go          # Block rewards and miner rewards calculation
 ├── smartcontract.go    # Smart contract implementation
+├── web3.go             # Web3 JSON-RPC server
+├── network.go          # P2P network implementation
+├── network_sync.go     # Network synchronization
 └── utils.go            # Utility functions (hashing, etc.)
 ```
 
@@ -224,6 +230,35 @@ Executable contracts deployed on the blockchain:
 - **Contract Calls**: Transactions can include contract call data to interact with smart contracts
 - **State Management**: Each contract maintains its own state that persists across calls
 
+### 19. Web3 Integration
+
+Web3 JSON-RPC API server for Ethereum-compatible blockchain interaction:
+- **HTTP JSON-RPC Server**: Standard Web3 API server on port 8545
+- **Ethereum-Compatible Endpoints**: Implements standard Ethereum JSON-RPC methods
+- **API Methods**:
+  - `web3_clientVersion` - Returns client version information
+  - `eth_blockNumber` - Returns the latest block number
+  - `eth_getBalance` - Gets account balance in Wei
+  - `eth_getBlockByNumber` - Retrieves block by number
+  - `eth_getTransactionCount` - Gets transaction count for address
+  - `eth_sendTransaction` - Sends new transaction to mempool
+  - `eth_call` - Executes contract call (read-only)
+  - `eth_getCode` - Gets contract bytecode
+- **Web3 Compatibility**: Compatible with Web3 libraries and tools
+- **JSON-RPC 2.0**: Follows JSON-RPC 2.0 specification
+
+### 20. PBFT Consensus
+
+Practical Byzantine Fault Tolerance consensus mechanism:
+- **Three-Phase Protocol**: Pre-Prepare, Prepare, and Commit phases
+- **Byzantine Fault Tolerance**: Tolerates up to f faulty nodes in 3f+1 network
+- **Quorum-Based**: Requires 2f+1 votes for consensus
+- **Deterministic Finality**: No forks, immediate block finality
+- **Primary Node Selection**: Round-robin primary selection based on view
+- **Message Types**: Pre-Prepare, Prepare, Commit, and View Change messages
+- **State Machine**: Idle → Pre-Prepare → Prepare → Commit → Finalized
+- **Consensus Validation**: Validates quorum requirements and message signatures
+
 ## Example Output
 
 The program will display:
@@ -262,6 +297,8 @@ The program will display:
 - **Block Rewards**: Rewards for miners/validators who create blocks
 - **Network/P2P**: Peer-to-peer network for distributed blockchain
 - **Smart Contracts**: Executable contracts with state management and function calls
+- **Web3 Integration**: JSON-RPC API server with Ethereum-compatible endpoints
+- **PBFT Consensus**: Byzantine fault-tolerant consensus mechanism
 
 ## Adjusting Difficulty
 
@@ -289,8 +326,12 @@ This implementation now includes:
 - **Block Rewards** for miners/validators
 - **Network/P2P** for distributed blockchain
 - **Smart Contracts** with multiple contract types and state management
+- **Web3 Integration** with JSON-RPC API server
+- **PBFT Consensus** for Byzantine fault tolerance
 
 ## Future Enhancements
 
-- Web3 integration
-- Additional consensus mechanisms (PBFT, Raft, etc.)
+- Additional consensus mechanisms (Raft, HoneyBadgerBFT, etc.)
+- Layer 2 scaling solutions
+- Cross-chain bridges
+- Enhanced smart contract language
