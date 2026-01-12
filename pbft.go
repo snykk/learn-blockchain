@@ -368,7 +368,7 @@ func (bc *Blockchain) CreateBlockWithPBFT(transactions []*Transaction, nodes []s
 		if err != nil {
 			return fmt.Errorf("pre-prepare phase failed: %v", err)
 		}
-		fmt.Printf("    ✓ Primary node sent pre-prepare message\n")
+		fmt.Printf("    Primary node sent pre-prepare message\n")
 		fmt.Printf("      Block hash: %s\n", msg.BlockHash[:16]+"...")
 	} else {
 		// Simulate receiving pre-prepare from primary
@@ -384,7 +384,7 @@ func (bc *Blockchain) CreateBlockWithPBFT(transactions []*Transaction, nodes []s
 		if err := pbft.ProcessPrePrepare(primaryMsg); err != nil {
 			return fmt.Errorf("processing pre-prepare failed: %v", err)
 		}
-		fmt.Printf("    ✓ Received pre-prepare from primary\n")
+		fmt.Printf("    Received pre-prepare from primary\n")
 	}
 
 	// Phase 2: Prepare (all nodes)
@@ -392,7 +392,7 @@ func (bc *Blockchain) CreateBlockWithPBFT(transactions []*Transaction, nodes []s
 	if _, err := pbft.PreparePhase(); err != nil {
 		return fmt.Errorf("prepare phase failed: %v", err)
 	}
-	fmt.Printf("    ✓ Node %s sent prepare message\n", nodeID[:16]+"...")
+	fmt.Printf("    Node %s sent prepare message\n", nodeID[:16]+"...")
 
 	// Simulate receiving prepare messages from other nodes
 	for i, node := range nodes {
@@ -407,7 +407,7 @@ func (bc *Blockchain) CreateBlockWithPBFT(transactions []*Transaction, nodes []s
 			}
 			pbft.ProcessPrepare(msg)
 			if i < 3 { // Show first 3 for clarity
-				fmt.Printf("    ✓ Received prepare from node %s\n", node[:16]+"...")
+				fmt.Printf("    Received prepare from node %s\n", node[:16]+"...")
 			}
 		}
 	}
@@ -416,14 +416,14 @@ func (bc *Blockchain) CreateBlockWithPBFT(transactions []*Transaction, nodes []s
 	if !pbft.Prepared {
 		return fmt.Errorf("failed to reach prepare quorum")
 	}
-	fmt.Println("    ✓ Prepare phase completed (quorum reached)")
+	fmt.Println("    Prepare phase completed (quorum reached)")
 
 	// Phase 3: Commit (all nodes)
 	fmt.Println("\n  Phase 3: Commit (Nodes broadcast commit)")
 	if _, err := pbft.CommitPhase(); err != nil {
 		return fmt.Errorf("commit phase failed: %v", err)
 	}
-	fmt.Printf("    ✓ Node %s sent commit message\n", nodeID[:16]+"...")
+	fmt.Printf("    Node %s sent commit message\n", nodeID[:16]+"...")
 
 	// Simulate receiving commit messages from other nodes
 	for i, node := range nodes {
@@ -438,7 +438,7 @@ func (bc *Blockchain) CreateBlockWithPBFT(transactions []*Transaction, nodes []s
 			}
 			pbft.ProcessCommit(msg)
 			if i < 3 { // Show first 3 for clarity
-				fmt.Printf("    ✓ Received commit from node %s\n", node[:16]+"...")
+				fmt.Printf("    Received commit from node %s\n", node[:16]+"...")
 			}
 		}
 	}
@@ -447,8 +447,8 @@ func (bc *Blockchain) CreateBlockWithPBFT(transactions []*Transaction, nodes []s
 	if !pbft.IsFinalized() {
 		return fmt.Errorf("failed to reach commit quorum")
 	}
-	fmt.Println("    ✓ Commit phase completed (quorum reached)")
-	fmt.Println("    ✓ Block finalized with PBFT consensus!")
+	fmt.Println("    Commit phase completed (quorum reached)")
+	fmt.Println("    Block finalized with PBFT consensus!")
 
 	// Validate consensus
 	if !pbft.Validate() {
