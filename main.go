@@ -11,6 +11,7 @@ func main() {
 	fmt.Println("          Mempool, Full Signature Verification, Proof of Stake")
 	fmt.Println("          Delegated Proof of Stake, Transaction Fees, Block Rewards")
 	fmt.Println("          Network/P2P, Smart Contracts, Web3 Integration, PBFT Consensus")
+	fmt.Println("          Raft Consensus")
 	fmt.Println()
 
 	// Create wallets
@@ -486,7 +487,7 @@ func main() {
 	if err := web3Server.Start(); err != nil {
 		fmt.Printf("Error starting Web3 server: %v\n", err)
 	} else {
-		fmt.Println("   ✓ Web3 server started on http://localhost:8545")
+		fmt.Println("   Web3 server started on http://localhost:8545")
 		fmt.Println("\n   Available Web3 API endpoints:")
 		fmt.Println("   - web3_clientVersion - Get client version")
 		fmt.Println("   - eth_blockNumber - Get latest block number")
@@ -531,7 +532,7 @@ func main() {
 	if err := aliceWallet.SignTransaction(pbftTx1); err != nil {
 		fmt.Printf("Error signing transaction: %v\n", err)
 	} else {
-		fmt.Printf("   ✓ Transaction 1: Alice -> Bob (2.0 coins)\n")
+		fmt.Printf("   Transaction 1: Alice -> Bob (2.0 coins)\n")
 
 		// Create block using PBFT consensus
 		fmt.Println("\n   Creating block using PBFT consensus...")
@@ -541,10 +542,62 @@ func main() {
 	}
 
 	fmt.Println("\n   PBFT Consensus Features:")
-	fmt.Println("   ✓ Three-phase protocol (Pre-Prepare, Prepare, Commit)")
-	fmt.Println("   ✓ Byzantine fault tolerance (tolerates malicious nodes)")
-	fmt.Println("   ✓ Deterministic finality (no forks)")
-	fmt.Println("   ✓ Quorum-based consensus (2f+1 votes required)")
+	fmt.Println("   Three-phase protocol (Pre-Prepare, Prepare, Commit)")
+	fmt.Println("   Byzantine fault tolerance (tolerates malicious nodes)")
+	fmt.Println("   Deterministic finality (no forks)")
+	fmt.Println("   Quorum-based consensus (2f+1 votes required)")
+
+	fmt.Println("\n=== Demo Complete ===")
+
+	// Demo: Raft Consensus
+	fmt.Println("\n21. Demonstrating Raft Consensus...")
+
+	fmt.Println("\n   Setting up Raft network...")
+	// Create list of nodes (addresses) for Raft cluster
+	raftNodes := []string{
+		aliceWallet.Address,
+		bobWallet.Address,
+		charlieWallet.Address,
+		minerWallet.Address,
+	}
+
+	fmt.Printf("   Total nodes: %d\n", len(raftNodes))
+	fmt.Printf("   Majority required: %d nodes\n", len(raftNodes)/2+1)
+	fmt.Printf("   Fault tolerance: %d nodes can fail\n", (len(raftNodes)-1)/2)
+
+	// Create transactions for Raft block
+	fmt.Println("\n   Creating transactions for Raft block...")
+	raftTx1 := NewTransaction(bobWallet.Address, charlieWallet.Address, 1.5)
+	if err := bobWallet.SignTransaction(raftTx1); err != nil {
+		fmt.Printf("Error signing transaction: %v\n", err)
+	} else {
+		fmt.Printf("   Transaction: Bob -> Charlie (1.5 coins)\n")
+
+		raftTx2 := NewTransaction(charlieWallet.Address, aliceWallet.Address, 1.0)
+		if err := charlieWallet.SignTransaction(raftTx2); err != nil {
+			fmt.Printf("Error signing transaction: %v\n", err)
+		} else {
+			fmt.Printf("   Transaction: Charlie -> Alice (1.0 coins)\n")
+
+			// Create block using Raft consensus
+			fmt.Println("\n   Creating block using Raft consensus...")
+			if err := bc.CreateBlockWithRaft([]*Transaction{raftTx1, raftTx2}, aliceWallet.Address, raftNodes); err != nil {
+				fmt.Printf("Error creating Raft block: %v\n", err)
+			}
+		}
+	}
+
+	fmt.Println("\n   Raft Consensus Features:")
+	fmt.Println("   Leader election (democratic leader selection)")
+	fmt.Println("   Log replication (strong consistency)")
+	fmt.Println("   Safety guarantees (at most one leader per term)")
+	fmt.Println("   Heartbeat mechanism (leader maintains authority)")
+	fmt.Println("   Fault tolerance (tolerates (N-1)/2 node failures)")
+	fmt.Println("\n   Comparison with PBFT:")
+	fmt.Println("   - Raft: Simpler to understand, leader-based")
+	fmt.Println("   - PBFT: More complex, no fixed leader, BFT-resistant")
+	fmt.Println("   - Raft: Crash fault tolerance (CFT)")
+	fmt.Println("   - PBFT: Byzantine fault tolerance (BFT)")
 
 	fmt.Println("\n=== Demo Complete ===")
 }

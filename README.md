@@ -24,6 +24,7 @@ An enhanced blockchain implementation in Go that covers fundamental blockchain c
 18. **Smart Contracts** - Executable contracts deployed on the blockchain
 19. **Web3 Integration** - Web3 JSON-RPC API server with Ethereum-compatible endpoints
 20. **PBFT Consensus** - Practical Byzantine Fault Tolerance consensus mechanism
+21. **Raft Consensus** - Leader-based consensus algorithm for distributed systems
 
 ## File Structure
 
@@ -38,6 +39,7 @@ learn-blockchain/
 ├── proofofstake.go     # Proof of Stake implementation
 ├── delegatedproofofstake.go # Delegated Proof of Stake implementation
 ├── pbft.go             # PBFT consensus implementation
+├── raft.go             # Raft consensus implementation
 ├── transaction.go      # Transaction structure and signing
 ├── merkle.go           # Merkle tree implementation
 ├── wallet.go           # Wallet with ECDSA key generation
@@ -259,6 +261,52 @@ Practical Byzantine Fault Tolerance consensus mechanism:
 - **State Machine**: Idle → Pre-Prepare → Prepare → Commit → Finalized
 - **Consensus Validation**: Validates quorum requirements and message signatures
 
+### 21. Raft Consensus
+
+Leader-based consensus algorithm for distributed systems:
+- **Leader Election**: Democratic leader selection through voting
+- **Log Replication**: Strong consistency through log replication
+- **Safety Properties**: At most one leader per term, election safety
+- **Heartbeat Mechanism**: Leader maintains authority through periodic heartbeats
+- **Crash Fault Tolerance**: Tolerates up to (N-1)/2 node failures
+- **State Transitions**: Follower → Candidate → Leader
+- **Message Types**: RequestVote, RequestVoteResponse, AppendEntries, AppendEntriesResponse
+- **Consensus Validation**: Majority-based replication and commit
+
+#### Raft vs PBFT Comparison:
+- **Raft**: Simpler to understand and implement, leader-based, crash fault tolerant
+- **PBFT**: More complex, no fixed leader, Byzantine fault tolerant (handles malicious nodes)
+- **Raft**: Better for crash failures in trusted networks
+- **PBFT**: Better for malicious nodes in untrusted networks
+- **Raft**: Uses randomized election timeouts (150-300ms)
+- **PBFT**: Uses deterministic view-based primary selection
+- **Raft**: Log replication with consistency check
+- **PBFT**: Three-phase protocol with voting
+
+#### Raft Key Components:
+1. **Leader Election**:
+   - Nodes start as followers
+   - If no heartbeat received within election timeout, become candidate
+   - Candidate requests votes from all nodes
+   - Node with majority votes becomes leader
+
+2. **Log Replication**:
+   - Leader accepts transactions and creates log entries
+   - Leader replicates log entries to all followers
+   - Once majority acknowledges entry, it's committed
+   - Leader notifies followers of commit index
+
+3. **Safety**:
+   - Election safety: at most one leader per term
+   - Leader append-only: leader never overwrites/deletes log entries
+   - Log matching: if two logs contain same entry at same index, all previous entries match
+   - Leader completeness: if log entry is committed in one term, it appears in all future leaders' logs
+
+4. **Heartbeat**:
+   - Leader sends periodic heartbeats (empty AppendEntries) to followers
+   - Followers reset election timeout on receiving heartbeat
+   - Prevents unnecessary elections when leader is alive
+
 ## Example Output
 
 The program will display:
@@ -328,10 +376,11 @@ This implementation now includes:
 - **Smart Contracts** with multiple contract types and state management
 - **Web3 Integration** with JSON-RPC API server
 - **PBFT Consensus** for Byzantine fault tolerance
+- **Raft Consensus** for leader-based distributed consensus
 
 ## Future Enhancements
 
-- Additional consensus mechanisms (Raft, HoneyBadgerBFT, etc.)
+- Additional consensus mechanisms (HoneyBadgerBFT, etc.)
 - Layer 2 scaling solutions
 - Cross-chain bridges
 - Enhanced smart contract language

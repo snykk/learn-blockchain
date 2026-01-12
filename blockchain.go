@@ -254,3 +254,85 @@ func (bc *Blockchain) CallContract(contractAddress string, function string, args
 func (bc *Blockchain) GetContract(address string) (*SmartContract, error) {
 	return bc.ContractRegistry.GetContract(address)
 }
+
+// CreateBlockWithRaft creates a block using Raft consensus
+func (bc *Blockchain) CreateBlockWithRaft(transactions []*Transaction, nodeID string, nodes []string) error {
+	// Validate all transactions before adding
+	for _, tx := range transactions {
+		if err := bc.ValidateTransaction(tx); err != nil {
+			return err
+		}
+	}
+
+	// Create Raft node
+	raftNode := NewRaftNode(nodeID, nodes, bc)
+
+	fmt.Printf("\n=== Raft Consensus for Block #%d ===\n", len(bc.Blocks))
+	fmt.Printf("Node ID: %s\n", nodeID[:16]+"...")
+	fmt.Printf("Total nodes: %d\n", len(nodes))
+	fmt.Printf("State: %s\n", raftNode.State)
+	fmt.Printf("Election timeout: %v\n", raftNode.ElectionTimeout)
+
+	// Step 1: Leader Election
+	if raftNode.CheckElectionTimeout() || raftNode.State == RaftFollower {
+		if err := raftNode.StartElection(); err != nil {
+			return fmt.Errorf("leader election failed: %v", err)
+		}
+	}
+
+	// Verify we have a leader
+	if !raftNode.IsLeader() {
+		return fmt.Errorf("this node is not the leader")
+	}
+
+	// Step 2: Create the block
+	prevBlock := bc.Blocks[len(bc.Blocks)-1]
+
+	// Create Merkle tree from transactions
+	merkleTree := NewMerkleTree(transactions)
+	merkleRoot := merkleTree.GetRootHash()
+
+	newBlock := &Block{
+		Index:        prevBlock.Index + 1,
+		Timestamp:    time.Now(),
+		Transactions: transactions,
+		MerkleRoot:   merkleRoot,
+		PreviousHash: prevBlock.Hash,
+		Nonce:        0, // Raft doesn't require mining
+	}
+
+	// Calculate hash
+	newBlock.Hash = newBlock.CalculateHash()
+
+	fmt.Printf("\nBlock created:\n")
+	fmt.Printf("  Index: %d\n", newBlock.Index)
+	fmt.Printf("  Hash: %s\n", newBlock.Hash[:16]+"...")
+	fmt.Printf("  Transactions: %d\n", len(transactions))
+
+	// Step 3: Replicate log to followers
+	if err := raftNode.ReplicateLog(newBlock); err != nil {
+		return fmt.Errorf("log replication failed: %v", err)
+	}
+
+	// Step 4: Apply committed block to blockchain
+	bc.Blocks = append(bc.Blocks, newBlock)
+
+	fmt.Printf("\nBlock #%d added to blockchain using Raft consensus!\n", newBlock.Index)
+	fmt.Printf("  Leader: %s\n", nodeID[:16]+"...")
+	fmt.Printf("  Term: %d\n", raftNode.CurrentTerm)
+	fmt.Printf("  Log index: %d\n", len(raftNode.Log))
+	fmt.Printf("  Commit index: %d\n", raftNode.CommitIndex)
+	fmt.Printf("  Replicated to majority of nodes\n")
+
+	// Step 5: Send heartbeat to maintain leadership
+	fmt.Printf("\nSending heartbeats to maintain leadership...\n")
+	if err := raftNode.SendHeartbeat(); err != nil {
+		fmt.Printf("  Warning: Heartbeat failed: %v\n", err)
+	} else {
+		fmt.Printf("  Heartbeat sent successfully\n")
+	}
+
+	fmt.Printf("\n=== Raft Consensus Complete ===\n\n")
+
+	return nil
+}
