@@ -26,6 +26,7 @@ An enhanced blockchain implementation in Go that covers fundamental blockchain c
 20. **PBFT Consensus** - Practical Byzantine Fault Tolerance consensus mechanism
 21. **Raft Consensus** - Leader-based consensus algorithm for distributed systems
 22. **Layer 2 Payment Channels** - State channels for instant, low-fee transactions
+23. **Cross-Chain Bridges** - Interoperability between different blockchains
 
 ## File Structure
 
@@ -52,6 +53,7 @@ learn-blockchain/
 ├── network.go          # P2P network implementation
 ├── network_sync.go     # Network synchronization
 ├── paymentchannel.go   # Layer 2 payment channels implementation
+├── bridge.go           # Cross-chain bridge implementation
 └── utils.go            # Utility functions (hashing, etc.)
 ```
 
@@ -366,6 +368,74 @@ Layer 2 scaling solution using payment channels for instant, low-fee off-chain t
 - **Streaming**: Pay-per-second content
 - **Ridesharing**: Per-mile/minute payments
 
+### 23. Cross-Chain Bridges
+
+Cross-chain bridge for interoperability between different blockchains:
+- **Interoperability**: Connect independent blockchains for asset transfers
+- **Two-Way Peg**: Bidirectional asset transfer between chains
+- **Validator Security**: Multi-signature validation by decentralized validators
+- **Lock & Unlock**: Secure fund locking on source, minting on destination
+- **Event-Driven**: Lock, unlock, and approval events for transparency
+- **Bridge Fees**: Small fee for bridge operations
+- **Reverse Transfers**: Support for transfers in both directions
+- **Transaction Tracking**: Complete history of bridge transactions
+- **Validator Management**: Add/remove validators with stake requirements
+- **Amount Limits**: Min/max transfer limits for security
+
+#### Bridge Transfer Process:
+1. **Lock Phase**:
+   - User initiates transfer from Chain A to Chain B
+   - Funds locked on source chain (Chain A)
+   - Bridge transaction created with unique ID
+   - Lock event emitted with transaction details
+
+2. **Approval Phase**:
+   - Bridge validators verify the lock transaction
+   - Each validator signs the transaction
+   - Once threshold (required signatures) reached, transaction approved
+   - Approval events emitted for each validator
+
+3. **Unlock Phase**:
+   - Approved transaction triggers unlock on destination chain
+   - Funds minted/released to recipient on Chain B
+   - Unlock event emitted with completion details
+   - Transaction marked as completed
+
+4. **Reverse Transfer**:
+   - Same process in opposite direction (Chain B → Chain A)
+   - Maintains two-way peg between chains
+
+#### Bridge Components:
+- **Bridge ID**: Unique identifier for each bridge
+- **Chain Pair**: Source and destination blockchains
+- **Validators**: Decentralized set of validators with stake
+- **Required Signatures**: Number of approvals needed (e.g., 3-of-5)
+- **Fee Structure**: Small percentage fee for bridge operations
+- **Transaction States**: Pending → Approved → Completed
+- **Event Log**: Complete history of all bridge events
+
+#### Security Features:
+- **Multi-Sig Validation**: Requires multiple validator signatures
+- **Cryptographic Proofs**: Hash-based transaction verification
+- **Staked Validators**: Economic security through staked tokens
+- **Amount Limits**: Min/max transfer amounts prevent attacks
+- **Event Tracking**: Transparent audit trail of all operations
+- **Time-Locked**: Optional timeout for failed transactions
+
+#### Use Cases:
+- **Asset Portability**: Move tokens between Ethereum, BSC, Polygon
+- **Cross-Chain DeFi**: Use assets on different chains for yield farming
+- **Arbitrage Trading**: Exploit price differences across chains
+- **Liquidity Migration**: Move liquidity to where it's needed
+- **Chain Hopping**: Access features specific to each chain
+- **Multi-Chain DApps**: Applications spanning multiple blockchains
+
+#### Real-World Examples:
+- **Ethereum ↔ BSC Bridge**: Transfer ETH between Ethereum and Binance Smart Chain
+- **Polygon Bridge**: Move assets from Ethereum to Polygon
+- **Arbitrum Bridge**: Bridge to Layer 2 scaling solutions
+- **Cosmos IBC**: Inter-Blockchain Communication protocol
+
 ## Example Output
 
 The program will display:
@@ -408,6 +478,7 @@ The program will display:
 - **PBFT Consensus**: Byzantine fault-tolerant consensus mechanism
 - **Raft Consensus**: Leader-based distributed consensus algorithm
 - **Layer 2 Payment Channels**: State channels for instant off-chain transactions
+- **Cross-Chain Bridges**: Interoperability between different blockchains
 
 ## Adjusting Difficulty
 
@@ -439,11 +510,13 @@ This implementation now includes:
 - **PBFT Consensus** for Byzantine fault tolerance
 - **Raft Consensus** for leader-based distributed consensus
 - **Layer 2 Payment Channels** for instant off-chain transactions
+- **Cross-Chain Bridges** for interoperability between blockchains
 
 ## Future Enhancements
 
 - Additional consensus mechanisms (HoneyBadgerBFT, etc.)
 - Additional Layer 2 solutions (Plasma, Rollups, Sidechains)
-- Cross-chain bridges
 - Enhanced smart contract language
+- Zero-Knowledge Proofs
+- Sharding implementation
 
