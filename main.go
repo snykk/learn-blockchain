@@ -11,7 +11,7 @@ func main() {
 	fmt.Println("          Mempool, Full Signature Verification, Proof of Stake")
 	fmt.Println("          Delegated Proof of Stake, Transaction Fees, Block Rewards")
 	fmt.Println("          Network/P2P, Smart Contracts, Web3 Integration, PBFT Consensus")
-	fmt.Println("          Raft Consensus, Layer 2 Payment Channels")
+	fmt.Println("          Raft Consensus, Layer 2 Payment Channels, Cross-chain Bridges")
 	fmt.Println()
 
 	// Create wallets
@@ -116,6 +116,14 @@ func main() {
 		return
 	}
 	fmt.Printf("   Miner wallet: %s\n", minerWallet.Address)
+
+	// Create Dave wallet for bridge demo
+	daveWallet, err := NewWallet()
+	if err != nil {
+		fmt.Printf("Error creating Dave wallet: %v\n", err)
+		return
+	}
+	fmt.Printf("   Dave wallet: %s\n", daveWallet.Address)
 
 	if err := bc.AddBlockWithReward([]*Transaction{tx1}, minerWallet.Address); err != nil {
 		fmt.Printf("Error adding block: %v\n", err)
@@ -742,6 +750,148 @@ func main() {
 		fmt.Println("   - 8 transactions processed off-chain instantly")
 		fmt.Println("   - Only 2 on-chain transactions: open + close")
 		fmt.Println("   - Gas savings: ~75% (8 vs ~32 on-chain transactions)")
+	}
+
+	// Demo: Cross-Chain Bridges
+	fmt.Println("\n23. Demonstrating Cross-Chain Bridges...")
+
+	fmt.Println("\n   Setting up cross-chain bridge...")
+	// Create two separate blockchains (simulating Mainnet and Sidechain)
+	mainnet := NewBlockchain()
+	sidechain := NewBlockchain()
+
+	// Give Alice coins on mainnet
+	fmt.Println("\n   Funding Alice on Mainnet...")
+	coinbase := mainnet.AddCoinbaseTransaction(aliceWallet.Address, 100.0)
+	mainnet.AddBlock([]*Transaction{coinbase})
+	fmt.Printf("   Alice's Mainnet balance: %.2f\n", mainnet.GetBalance(aliceWallet.Address))
+	time.Sleep(500 * time.Millisecond)
+
+	// Create bridge between Mainnet and Sidechain
+	bridge := NewBridge(
+		"eth-bsc-bridge",
+		mainnet,
+		sidechain,
+		"Mainnet",
+		"Sidechain",
+		3, // Require 3 validator signatures
+	)
+
+	// Add validators to the bridge
+	fmt.Println("\n   Adding bridge validators...")
+	bridge.AddValidator("validator1", bobWallet.Address, 1000.0, 1)
+	bridge.AddValidator("validator2", charlieWallet.Address, 1000.0, 1)
+	bridge.AddValidator("validator3", minerWallet.Address, 1000.0, 1)
+	bridge.AddValidator("validator4", daveWallet.Address, 500.0, 1)
+	time.Sleep(500 * time.Millisecond)
+
+	// Lock funds on Mainnet
+	fmt.Println("\n   Transferring funds from Mainnet to Sidechain...")
+	bridgeTx, err := bridge.LockFunds(
+		aliceWallet.Address,
+		aliceWallet.Address,
+		50.0,  // Amount
+		"ETH", // Token
+	)
+	if err != nil {
+		fmt.Printf("Error locking funds: %v\n", err)
+	} else {
+		time.Sleep(1 * time.Second)
+
+		// Validators approve the transaction
+		fmt.Println("\n   Bridge validators approving transaction...")
+
+		// Simulate validator approvals
+		validators := []struct {
+			id string
+			sig string
+		}{
+			{"validator1", "sig_1_" + bridgeTx.TxID[:8]},
+			{"validator2", "sig_2_" + bridgeTx.TxID[:8]},
+			{"validator3", "sig_3_" + bridgeTx.TxID[:8]},
+		}
+
+		for _, v := range validators {
+			time.Sleep(300 * time.Millisecond)
+			bridge.ApproveTransaction(bridgeTx.TxID, v.id, v.sig)
+		}
+
+		time.Sleep(500 * time.Millisecond)
+
+		// Unlock funds on Sidechain
+		fmt.Println("\n   Unlocking funds on Sidechain...")
+		if err := bridge.UnlockFunds(bridgeTx); err != nil {
+			fmt.Printf("Error unlocking funds: %v\n", err)
+		} else {
+			fmt.Printf("\n   ✓ Transfer complete!\n")
+			fmt.Printf("   Alice's Mainnet balance: %.2f ETH (locked)\n", mainnet.GetBalance(aliceWallet.Address))
+			fmt.Printf("   Alice's Sidechain balance: %.2f ETH\n", sidechain.GetBalance(aliceWallet.Address))
+		}
+
+		time.Sleep(1 * time.Second)
+
+		// Demonstrate reverse transfer (Sidechain -> Mainnet)
+		fmt.Println("\n   Performing reverse transfer (Sidechain -> Mainnet)...")
+
+		reverseTx, err := bridge.ReverseTransfer(
+			aliceWallet.Address,
+			aliceWallet.Address,
+			20.0,
+			"ETH",
+		)
+		if err != nil {
+			fmt.Printf("Error creating reverse transfer: %v\n", err)
+		} else {
+			time.Sleep(500 * time.Millisecond)
+
+			// Validators approve reverse transaction
+			fmt.Println("\n   Validators approving reverse transfer...")
+			for _, v := range validators {
+				time.Sleep(200 * time.Millisecond)
+				bridge.ApproveTransaction(reverseTx.TxID, v.id, v.sig+"_rev")
+			}
+
+			time.Sleep(300 * time.Millisecond)
+
+			// Unlock on Mainnet
+			updatedTx, _ := bridge.GetTransaction(reverseTx.TxID)
+			if updatedTx.Status == BridgeStatusApproved {
+				if err := bridge.UnlockFunds(updatedTx); err != nil {
+					fmt.Printf("Error unlocking reverse transfer: %v\n", err)
+				} else {
+					fmt.Printf("\n   ✓ Reverse transfer complete!\n")
+					fmt.Printf("   Alice's Mainnet balance: %.2f ETH\n", mainnet.GetBalance(aliceWallet.Address))
+					fmt.Printf("   Alice's Sidechain balance: %.2f ETH\n", sidechain.GetBalance(aliceWallet.Address))
+				}
+			}
+		}
+
+		time.Sleep(500 * time.Millisecond)
+
+		// Display bridge statistics
+		fmt.Println("\n   Bridge Statistics:")
+		stats := bridge.GetBridgeStatistics()
+		fmt.Printf("   Bridge ID: %s\n", stats["bridge_id"])
+		fmt.Printf("   Chain Pair: %s ↔ %s\n", stats["chain_a"], stats["chain_b"])
+		fmt.Printf("   Validators: %d\n", stats["validators"])
+		fmt.Printf("   Required Signatures: %d\n", stats["required_sigs"])
+		fmt.Printf("   Pending Transactions: %d\n", stats["pending_txs"])
+		fmt.Printf("   Completed Transactions: %d\n", stats["completed_txs"])
+		fmt.Printf("   Total Volume: %.2f ETH\n", stats["total_volume"])
+		fmt.Printf("   Bridge Fee: %.1f%%\n", stats["fee"].(float64)*100)
+
+		fmt.Println("\n   Cross-Chain Bridge Benefits:")
+		fmt.Println("   ✓ Interoperability between different blockchains")
+		fmt.Println("   ✓ Asset transfer across chains (two-way peg)")
+		fmt.Println("   ✓ Validator-based security (multi-sig)")
+		fmt.Println("   ✓ Decentralized trust model")
+		fmt.Println("   ✓ Event-driven architecture")
+
+		fmt.Println("\n   Bridge Mechanics:")
+		fmt.Println("   1. Lock: Funds locked on source chain")
+		fmt.Println("   2. Approve: Validators verify and approve")
+		fmt.Println("   3. Unlock: Funds minted/released on destination chain")
+		fmt.Println("   4. Reverse: Same process in opposite direction")
 	}
 
 	fmt.Println("\n=== Demo Complete ===")

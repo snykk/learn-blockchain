@@ -12,6 +12,7 @@ type Blockchain struct {
 	Mempool          *Mempool
 	ContractRegistry *ContractRegistry
 	ChannelManager   *ChannelManager
+	BridgeManager    *BridgeManager
 }
 
 // NewBlockchain creates a new blockchain with genesis block
@@ -21,9 +22,11 @@ func NewBlockchain() *Blockchain {
 		Mempool:          NewMempool(),
 		ContractRegistry: NewContractRegistry(),
 		ChannelManager:   nil, // Will be initialized after blockchain creation
+		BridgeManager:    nil, // Will be initialized after blockchain creation
 	}
 	bc.CreateGenesisBlock()
 	bc.ChannelManager = NewChannelManager(bc)
+	bc.BridgeManager = NewBridgeManager(bc)
 	return bc
 }
 
