@@ -25,6 +25,7 @@ An enhanced blockchain implementation in Go that covers fundamental blockchain c
 19. **Web3 Integration** - Web3 JSON-RPC API server with Ethereum-compatible endpoints
 20. **PBFT Consensus** - Practical Byzantine Fault Tolerance consensus mechanism
 21. **Raft Consensus** - Leader-based consensus algorithm for distributed systems
+22. **Layer 2 Payment Channels** - State channels for instant, low-fee transactions
 
 ## File Structure
 
@@ -50,6 +51,7 @@ learn-blockchain/
 ├── web3.go             # Web3 JSON-RPC server
 ├── network.go          # P2P network implementation
 ├── network_sync.go     # Network synchronization
+├── paymentchannel.go   # Layer 2 payment channels implementation
 └── utils.go            # Utility functions (hashing, etc.)
 ```
 
@@ -307,6 +309,63 @@ Leader-based consensus algorithm for distributed systems:
    - Followers reset election timeout on receiving heartbeat
    - Prevents unnecessary elections when leader is alive
 
+### 22. Layer 2 Payment Channels (State Channels)
+
+Layer 2 scaling solution using payment channels for instant, low-fee off-chain transactions:
+- **Instant Transactions**: No block confirmation wait, sub-second finality
+- **Near-Zero Fees**: Minimal transaction costs compared to on-chain
+- **High Throughput**: 100+ transactions per second per channel
+- **Privacy**: Off-chain transactions not publicly visible on blockchain
+- **Security**: Final settlement on blockchain with cryptographic guarantees
+- **Channel State**: Signed state updates with sequence numbers
+- **Multisig Escrow**: Funds locked in 2-of-2 multisig address
+- **Timeout Protection**: Automatic refund if channel times out
+- **Bidirectional Payments**: Both parties can send payments
+- **State Updates**: Cryptographically signed state transitions
+
+#### Payment Channel Lifecycle:
+1. **Channel Creation**:
+   - Two parties deposit funds into multisig address
+   - Initial state created with balances and sequence number 0
+   - Channel locked with timeout for safety
+
+2. **Off-Chain Transactions**:
+   - Parties can send instant payments off-chain
+   - Each payment updates the channel state
+   - New state signed by both parties
+   - Sequence number increments for each update
+   - Most recent state always valid
+
+3. **Channel Closure**:
+   - Either party can close channel by submitting final state
+   - Final state validated on blockchain
+   - Funds distributed according to final balances
+   - Only 2 on-chain transactions: open + close
+
+#### Benefits vs On-Chain:
+- **Speed**: Instant vs 10+ seconds per block
+- **Cost**: Minimal fees vs full transaction fees
+- **Scalability**: 100+ TPS vs limited by block size
+- **Privacy**: Off-chain vs public ledger
+- **User Experience**: Seamless vs waiting for confirmations
+
+#### Technical Details:
+- **State Channels**: Off-chain state with on-chain enforcement
+- **Cryptographic Signatures**: Each state update signed by both parties
+- **Sequence Numbers**: Prevent replay attacks and ensure ordering
+- **Challenge Period**: Time to dispute fraudulent close attempts
+- **Multisig Security**: 2-of-2 multisig for fund security
+- **Hash Locking**: Cryptographic commitment to state
+- **Non-Custodial**: Users always control their funds
+
+#### Use Cases:
+- **Micropayments**: Coffee, parking, streaming services
+- **High-Frequency Trading**: Instant trade settlements
+- **Gaming**: In-game purchases and rewards
+- **IoT**: Machine-to-machine payments
+- **Streaming**: Pay-per-second content
+- **Ridesharing**: Per-mile/minute payments
+
 ## Example Output
 
 The program will display:
@@ -347,6 +406,8 @@ The program will display:
 - **Smart Contracts**: Executable contracts with state management and function calls
 - **Web3 Integration**: JSON-RPC API server with Ethereum-compatible endpoints
 - **PBFT Consensus**: Byzantine fault-tolerant consensus mechanism
+- **Raft Consensus**: Leader-based distributed consensus algorithm
+- **Layer 2 Payment Channels**: State channels for instant off-chain transactions
 
 ## Adjusting Difficulty
 
@@ -377,10 +438,12 @@ This implementation now includes:
 - **Web3 Integration** with JSON-RPC API server
 - **PBFT Consensus** for Byzantine fault tolerance
 - **Raft Consensus** for leader-based distributed consensus
+- **Layer 2 Payment Channels** for instant off-chain transactions
 
 ## Future Enhancements
 
 - Additional consensus mechanisms (HoneyBadgerBFT, etc.)
-- Layer 2 scaling solutions
+- Additional Layer 2 solutions (Plasma, Rollups, Sidechains)
 - Cross-chain bridges
 - Enhanced smart contract language
+

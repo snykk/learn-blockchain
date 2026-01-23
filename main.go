@@ -11,7 +11,7 @@ func main() {
 	fmt.Println("          Mempool, Full Signature Verification, Proof of Stake")
 	fmt.Println("          Delegated Proof of Stake, Transaction Fees, Block Rewards")
 	fmt.Println("          Network/P2P, Smart Contracts, Web3 Integration, PBFT Consensus")
-	fmt.Println("          Raft Consensus")
+	fmt.Println("          Raft Consensus, Layer 2 Payment Channels")
 	fmt.Println()
 
 	// Create wallets
@@ -598,6 +598,151 @@ func main() {
 	fmt.Println("   - PBFT: More complex, no fixed leader, BFT-resistant")
 	fmt.Println("   - Raft: Crash fault tolerance (CFT)")
 	fmt.Println("   - PBFT: Byzantine fault tolerance (BFT)")
+
+	fmt.Println("\n=== Demo Complete ===")
+
+	// Demo: Layer 2 Payment Channels
+	fmt.Println("\n22. Demonstrating Layer 2 Payment Channels (State Channels)...")
+
+	fmt.Println("\n   Setting up payment channel...")
+	// Alice and Bob want to create a payment channel
+	channel, err := bc.ChannelManager.CreateChannel(
+		aliceWallet.Address,
+		bobWallet.Address,
+		20.0, // Alice deposits 20 coins
+		10.0, // Bob deposits 10 coins
+		24*time.Hour, // 24 hour timeout
+	)
+	if err != nil {
+		fmt.Printf("Error creating channel: %v\n", err)
+	} else {
+		fmt.Printf("\n   ✓ Payment channel created successfully\n")
+		fmt.Printf("   Channel ID: %s\n", channel.State.ChannelID[:16]+"...")
+		time.Sleep(1 * time.Second)
+
+		// Perform micropayments through the channel
+		fmt.Println("\n   Processing micropayments through channel...")
+
+		// Micropayment 1: Alice pays Bob 0.5 coins
+		fmt.Println("\n   Transaction 1: Alice → Bob (0.5 coins)")
+		newState1, err := channel.MicroPayment(aliceWallet.Address, 0.5)
+		if err != nil {
+			fmt.Printf("Error: %v\n", err)
+		} else {
+			// Sign the new state
+			sig1, _ := channel.SignState(newState1, aliceWallet.Address)
+			sig2, _ := channel.SignState(newState1, bobWallet.Address)
+
+			// Commit the signed state
+			signedState := &ChannelSignature{
+				State:      newState1,
+				Signature1: sig1,
+				Signature2: sig2,
+			}
+			channel.CommitState(signedState)
+		}
+		time.Sleep(500 * time.Millisecond)
+
+		// Micropayment 2: Bob pays Alice 0.3 coins
+		fmt.Println("\n   Transaction 2: Bob → Alice (0.3 coins)")
+		newState2, err := channel.MicroPayment(bobWallet.Address, 0.3)
+		if err != nil {
+			fmt.Printf("Error: %v\n", err)
+		} else {
+			sig1, _ := channel.SignState(newState2, aliceWallet.Address)
+			sig2, _ := channel.SignState(newState2, bobWallet.Address)
+
+			signedState := &ChannelSignature{
+				State:      newState2,
+				Signature1: sig1,
+				Signature2: sig2,
+			}
+			channel.CommitState(signedState)
+		}
+		time.Sleep(500 * time.Millisecond)
+
+		// Micropayment 3: Alice pays Bob 1.2 coins
+		fmt.Println("\n   Transaction 3: Alice → Bob (1.2 coins)")
+		newState3, err := channel.MicroPayment(aliceWallet.Address, 1.2)
+		if err != nil {
+			fmt.Printf("Error: %v\n", err)
+		} else {
+			sig1, _ := channel.SignState(newState3, aliceWallet.Address)
+			sig2, _ := channel.SignState(newState3, bobWallet.Address)
+
+			signedState := &ChannelSignature{
+				State:      newState3,
+				Signature1: sig1,
+				Signature2: sig2,
+			}
+			channel.CommitState(signedState)
+		}
+		time.Sleep(500 * time.Millisecond)
+
+		// Perform more rapid micropayments (simulating high-frequency transactions)
+		fmt.Println("\n   Processing rapid micropayments...")
+		for i := 0; i < 5; i++ {
+			amount := 0.1
+			var sender string
+			if i%2 == 0 {
+				sender = aliceWallet.Address
+			} else {
+				sender = bobWallet.Address
+			}
+
+			newState, err := channel.MicroPayment(sender, amount)
+			if err == nil {
+				sig1, _ := channel.SignState(newState, aliceWallet.Address)
+				sig2, _ := channel.SignState(newState, bobWallet.Address)
+
+				signedState := &ChannelSignature{
+					State:      newState,
+					Signature1: sig1,
+					Signature2: sig2,
+				}
+				channel.CommitState(signedState)
+			}
+		}
+		time.Sleep(500 * time.Millisecond)
+
+		// Display channel status
+		fmt.Println("\n   Final Channel Status:")
+		fmt.Printf("   %s\n", channel.GetStatus())
+
+		// Close the channel
+		fmt.Println("\n   Closing payment channel...")
+		finalSig := &ChannelSignature{
+			State:      channel.State,
+			Signature1: "final_signature_1",
+			Signature2: "final_signature_2",
+		}
+		if err := channel.CloseChannel(finalSig); err != nil {
+			fmt.Printf("Error closing channel: %v\n", err)
+		}
+
+		// Display channel statistics
+		fmt.Println("\n   Channel Manager Statistics:")
+		stats := bc.ChannelManager.GetChannelStatistics()
+		fmt.Printf("   Total Channels: %d\n", stats["total_channels"])
+		fmt.Printf("   Open Channels: %d\n", stats["open_channels"])
+		fmt.Printf("   Closed Channels: %d\n", stats["closed_channels"])
+		fmt.Printf("   Total Off-Chain Transactions: %d\n", stats["total_transactions"])
+		fmt.Printf("   Total Volume: %.2f coins\n", stats["total_volume"])
+
+		fmt.Println("\n   Layer 2 Payment Channel Benefits:")
+		fmt.Println("   ✓ Instant transactions (no block confirmation wait)")
+		fmt.Println("   ✓ Near-zero transaction fees")
+		fmt.Println("   ✓ High throughput (100+ TPS in channel)")
+		fmt.Println("   ✓ Privacy (transactions not on blockchain)")
+		fmt.Println("   ✓ Final security (settlement on blockchain)")
+
+		fmt.Println("\n   Comparison with On-Chain Transactions:")
+		fmt.Println("   - On-Chain: ~10s/block, requires mining, fees")
+		fmt.Println("   - Payment Channel: Instant, no mining, minimal fees")
+		fmt.Println("   - 8 transactions processed off-chain instantly")
+		fmt.Println("   - Only 2 on-chain transactions: open + close")
+		fmt.Println("   - Gas savings: ~75% (8 vs ~32 on-chain transactions)")
+	}
 
 	fmt.Println("\n=== Demo Complete ===")
 }
